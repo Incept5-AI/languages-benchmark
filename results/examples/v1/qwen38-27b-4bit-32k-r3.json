@@ -1,0 +1,1307 @@
+{
+ "benchmark": "languages-benchmark",
+ "version": "1.0.0",
+ "suite": "v1",
+ "tag": "qwen38-27b-4bit-32k-r3",
+ "label": "Qwen3.8-27B 4-bit",
+ "model": "mlx-community/Qwen3.8-27B-4bit",
+ "engine": "MLX 4-bit, Splash 1.3.2",
+ "hardware": "Mac Studio M5 Ultra 256 GB",
+ "mode": "thinking",
+ "effort": "medium",
+ "max_tokens": 32768,
+ "sampling": {
+  "temperature": 0.6,
+  "top_p": 0.95,
+  "top_k": 20,
+  "presence_penalty": 0.0
+ },
+ "workers": null,
+ "scoring": "1.0 first try, 0.5 after one feedback round, 0.0 fail; errors count",
+ "started": null,
+ "elapsed_s": 407.0,
+ "imported_from": "Incept5 internal runs, same prompts, graders and scoring; hosts and paths removed",
+ "records": [
+  {
+   "challenge": "json_deep_merge",
+   "category": "data",
+   "language": "python",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 9.2,
+     "finish_reason": "stop",
+     "completion_tokens": 1186,
+     "prompt_tokens": 332,
+     "tok_per_s": 129.6,
+     "reasoning_chars": 3094,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import json\n\n\ndef deep_merge(a, b):\n    if isinstance(a, dict) and isinstance(b, dict):\n        result = {}\n        for key in a:\n            if key in b:\n                result[key] = deep_merge(a[key], b[key])\n            else:\n                result[key] = a[key]\n        for key in b:\n            if key not in a:\n                result[key] = b[key]\n        return result\n    elif isinstance(a, list) and isinstance(b, list):\n        seen = []\n        for item in a:\n            if item not in seen:\n                seen.append(item)\n        for item in b:\n            if item not in seen:\n                seen.append(item)\n        return seen\n    else:\n        return b\n\n\ndef main():\n    path_a = \"__FIXTURE_DIR__/config_a.json\"\n    path_b = \"__FIXTURE_DIR__/config_b.json\"\n\n    with open(path_a, \"r\") as f:\n        config_a = json.load(f)\n    with open(path_b, \"r\") as f:\n        config_b = json.load(f)\n\n    merged = deep_merge(config_a, config_b)\n    print(json.dumps(merged, sort_keys=True, indent=2))\n\n\nif __name__ == \"__main__\":\n    main()"
+    }
+   ]
+  },
+  {
+   "challenge": "json_deep_merge",
+   "category": "data",
+   "language": "typescript",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 19.6,
+     "finish_reason": "stop",
+     "completion_tokens": 2271,
+     "prompt_tokens": 332,
+     "tok_per_s": 115.8,
+     "reasoning_chars": 6660,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import * as fs from 'fs';\n\nfunction isPlainObject(value: unknown): value is Record<string, unknown> {\n  return typeof value === 'object' && value !== null && !Array.isArray(value);\n}\n\nfunction deepMerge(a: unknown, b: unknown): unknown {\n  if (isPlainObject(a) && isPlainObject(b)) {\n    const result: Record<string, unknown> = {};\n    const allKeys = new Set<string>([...Object.keys(a), ...Object.keys(b)]);\n    for (const key of allKeys) {\n      if (key in a && key in b) {\n        result[key] = deepMerge(a[key], b[key]);\n      } else if (key in a) {\n        result[key] = a[key];\n      } else {\n        result[key] = b[key];\n      }\n    }\n    return result;\n  }\n\n  if (Array.isArray(a) && Array.isArray(b)) {\n    const result: unknown[] = [...a];\n    for (const item of b) {\n      const itemStr = JSON.stringify(item);\n      if (!result.some((existing) => JSON.stringify(existing) === itemStr)) {\n        result.push(item);\n      }\n    }\n    return result;\n  }\n\n  return b;\n}\n\nfunction sortKeys(value: unknown): unknown {\n  if (isPlainObject(value)) {\n    const sorted: Record<string, unknown> = {};\n    for (const key of Object.keys(value).sort()) {\n      sorted[key] = sortKeys(value[key]);\n    }\n    return sorted;\n  }\n  if (Array.isArray(value)) {\n    return value.map((item) => sortKeys(item));\n  }\n  return value;\n}\n\nconst pathA =\n  '__FIXTURE_DIR__/config_a.json';\nconst pathB =\n  '__FIXTURE_DIR__/config_b.json';\n\nconst a: unknown = JSON.parse(fs.readFileSync(pathA, 'utf-8'));\nconst b: unknown = JSON.parse(fs.readFileSync(pathB, 'utf-8'));\n\nconst merged = deepMerge(a, b);\nconst sorted = sortKeys(merged);\n\nprocess.stdout.write(JSON.stringify(sorted, null, 2) + '\\n');"
+    }
+   ]
+  },
+  {
+   "challenge": "json_deep_merge",
+   "category": "data",
+   "language": "java",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 61.2,
+     "finish_reason": "stop",
+     "completion_tokens": 8161,
+     "prompt_tokens": 368,
+     "tok_per_s": 133.3,
+     "reasoning_chars": 20448,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import java.io.*;\nimport java.nio.file.*;\nimport java.util.*;\n\npublic class Main {\n\n    static class JsonParser {\n        private final String input;\n        private int pos;\n\n        JsonParser(String input) {\n            this.input = input;\n            this.pos = 0;\n        }\n\n        Object parse() {\n            skipWhitespace();\n            Object result = parseValue();\n            skipWhitespace();\n            if (pos < input.length())\n                throw new RuntimeException(\"Unexpected trailing characters at position \" + pos);\n            return result;\n        }\n\n        private void skipWhitespace() {\n            while (pos < input.length() && Character.isWhitespace(input.charAt(pos))) pos++;\n        }\n\n        private Object parseValue() {\n            skipWhitespace();\n            if (pos >= input.length()) throw new RuntimeException(\"Unexpected end of input\");\n            char c = input.charAt(pos);\n            if (c == '{') return parseObject();\n            if (c == '[') return parseArray();\n            if (c == '\"') return parseString();\n            if (c == 't') return parseTrue();\n            if (c == 'f') return parseFalse();\n            if (c == 'n') return parseNull();\n            return parseNumber();\n        }\n\n        private LinkedHashMap<String, Object> parseObject() {\n            expect('{');\n            LinkedHashMap<String, Object> obj = new LinkedHashMap<>();\n            skipWhitespace();\n            if (pos < input.length() && input.charAt(pos) == '}') {\n                pos++;\n                return obj;\n            }\n            while (true) {\n                skipWhitespace();\n                String key = parseString();\n                skipWhitespace();\n                expect(':');\n                Object value = parseValue();\n                obj.put(key, value);\n                skipWhitespace();\n                if (pos < input.length() && input.charAt(pos) == ',') {\n                    pos++;\n                } else if (pos < input.leng"
+    }
+   ]
+  },
+  {
+   "challenge": "json_deep_merge",
+   "category": "data",
+   "language": "swift",
+   "score": 0.5,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 55.8,
+     "finish_reason": "stop",
+     "completion_tokens": 6632,
+     "prompt_tokens": 364,
+     "tok_per_s": 118.9,
+     "reasoning_chars": 17769,
+     "error": "",
+     "stage": "run",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "import Foundation\n\nenum JSONValue {\n    case object([(String, JSONValue)])\n    case array([JSONValue])\n    case string(String)\n    case number(Double)\n    case bool(Bool)\n    case null\n}\n\nfunc convert(_ obj: Any) -> JSONValue {\n    if obj is NSNull {\n        return .null\n    }\n    if let b = obj as? Bool {\n        return .bool(b)\n    }\n    if let n = obj as? NSNumber {\n        return .number(n.doubleValue)\n    }\n    if let s = obj as? String {\n        return .string(s)\n    }\n    if let d = obj as? [String: Any] {\n        let pairs = d.map { ($0.key, convert($0.value)) }\n        return .object(pairs)\n    }\n    if let a = obj as? [Any] {\n        return .array(a.map { convert($0) })\n    }\n    return .null\n}\n\nfunc escapeString(_ s: String) -> String {\n    var result = \"\"\n    for char in s {\n        switch char {\n        case \"\\\"\": result += \"\\\\\\\"\"\n        case \"\\\\\": result += \"\\\\\\\\\"\n        case \"\\n\": result += \"\\\\n\"\n        case \"\\r\": result += \"\\\\r\"\n        case \"\\t\": result += \"\\\\t\"\n        case \"\\u{08}\": result += \"\\\\b\"\n        case \"\\u{0C}\": result += \"\\\\f\"\n        default:\n            if Unicode.Scalar(char).value < 0x20 {\n                result += String(format: \"\\\\u%04x\", Unicode.Scalar(char)!.value)\n            } else {\n                result.append(char)\n            }\n        }\n    }\n    return result\n}\n\nfunc canonicalString(_ v: JSONValue) -> String {\n    switch v {\n    case .object(let pairs):\n        let sorted = pairs.sorted { $0.0 < $1.0 }\n        let inner = sorted.map { \"\\\"\\(escapeString($0.0))\\\":\\(canonicalString($0.1))\" }.joined(separator: \",\")\n        return \"{\\(inner)}\"\n    case .array(let arr):\n        let inner = arr.map { canonicalString($0) }.joined(separator: \",\")\n        return \"[\\(inner)]\"\n    case .string(let s):\n        return \"\\\"\\(escapeString(s))\\\"\"\n    case .number(let n):\n        if n == floor(n) && abs(n) < 1e15 {\n            return String(Int(n))\n        }\n        return String(n)\n    case .bool(let b):\n        return b ? \"true\" : \"fa"
+    },
+    {
+     "n": 2,
+     "seconds": 15.3,
+     "finish_reason": "stop",
+     "completion_tokens": 1965,
+     "prompt_tokens": 2621,
+     "tok_per_s": 128.0,
+     "reasoning_chars": 1356,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import Foundation\n\nenum JSONValue {\n    case object([(String, JSONValue)])\n    case array([JSONValue])\n    case string(String)\n    case number(Double)\n    case bool(Bool)\n    case null\n}\n\nfunc convert(_ obj: Any) -> JSONValue {\n    if obj is NSNull {\n        return .null\n    }\n    if let b = obj as? Bool {\n        return .bool(b)\n    }\n    if let n = obj as? NSNumber {\n        return .number(n.doubleValue)\n    }\n    if let s = obj as? String {\n        return .string(s)\n    }\n    if let d = obj as? [String: Any] {\n        let pairs = d.map { ($0.key, convert($0.value)) }\n        return .object(pairs)\n    }\n    if let a = obj as? [Any] {\n        return .array(a.map { convert($0) })\n    }\n    return .null\n}\n\nfunc escapeString(_ s: String) -> String {\n    var result = \"\"\n    for char in s {\n        switch char {\n        case \"\\\"\": result += \"\\\\\\\"\"\n        case \"\\\\\": result += \"\\\\\\\\\"\n        case \"\\n\": result += \"\\\\n\"\n        case \"\\r\": result += \"\\\\r\"\n        case \"\\t\": result += \"\\\\t\"\n        case \"\\u{08}\": result += \"\\\\b\"\n        case \"\\u{0C}\": result += \"\\\\f\"\n        default:\n            if let scalar = char.unicodeScalars.first, scalar.value < 0x20 {\n                result += String(format: \"\\\\u%04x\", scalar.value)\n            } else {\n                result.append(char)\n            }\n        }\n    }\n    return result\n}\n\nfunc canonicalString(_ v: JSONValue) -> String {\n    switch v {\n    case .object(let pairs):\n        let sorted = pairs.sorted { $0.0 < $1.0 }\n        let inner = sorted.map { \"\\\"\\(escapeString($0.0))\\\":\\(canonicalString($0.1))\" }.joined(separator: \",\")\n        return \"{\\(inner)}\"\n    case .array(let arr):\n        let inner = arr.map { canonicalString($0) }.joined(separator: \",\")\n        return \"[\\(inner)]\"\n    case .string(let s):\n        return \"\\\"\\(escapeString(s))\\\"\"\n    case .number(let n):\n        if n == floor(n) && abs(n) < 1e15 {\n            return String(Int(n))\n        }\n        return String(n)\n    case .bool(let b):\n        return b ? \""
+    }
+   ]
+  },
+  {
+   "challenge": "csv_analysis",
+   "category": "data",
+   "language": "python",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 13.7,
+     "finish_reason": "stop",
+     "completion_tokens": 1889,
+     "prompt_tokens": 372,
+     "tok_per_s": 138.2,
+     "reasoning_chars": 4858,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import csv\n\nfilepath = \"__FIXTURE_DIR__/employees.csv\"\n\ndef parse_salary(s):\n    s = s.replace('$', '').replace(',', '').strip()\n    return float(s)\n\nwith open(filepath, 'r', newline='') as f:\n    reader = csv.DictReader(f)\n    employees = list(reader)\n\ndept_salaries = {}\nfor emp in employees:\n    dept = emp['department'].strip()\n    salary = parse_salary(emp['salary'])\n    if dept not in dept_salaries:\n        dept_salaries[dept] = []\n    dept_salaries[dept].append(salary)\n\ndept_avg = {}\nfor dept, salaries in dept_salaries.items():\n    dept_avg[dept] = sum(salaries) / len(salaries)\n\nhighest_emp = max(employees, key=lambda e: parse_salary(e['salary']))\nhighest_name = highest_emp['name'].strip()\nhighest_salary = int(round(parse_salary(highest_emp['salary'])))\n\ndept_count = {}\nfor emp in employees:\n    dept = emp['department'].strip()\n    dept_count[dept] = dept_count.get(dept, 0) + 1\n\ndepts_gt2 = {d: c for d, c in dept_count.items() if c > 2}\n\ntotal_budget = int(round(sum(parse_salary(e['salary']) for e in employees)))\n\nprint(\"=== Salary Report ===\")\nprint()\nprint(\"Average Salary by Department:\")\nfor dept in sorted(dept_avg.keys()):\n    print(f\"  {dept}: ${dept_avg[dept]:,.2f}\")\nprint()\nprint(f\"Highest Paid: {highest_name} (${highest_salary:,})\")\nprint()\nprint(\"Departments with >2 employees:\")\nfor dept in sorted(depts_gt2.keys()):\n    print(f\"  {dept} ({depts_gt2[dept]} employees)\")\nprint()\nprint(f\"Total Budget: ${total_budget:,}\")"
+    }
+   ]
+  },
+  {
+   "challenge": "csv_analysis",
+   "category": "data",
+   "language": "java",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 22.3,
+     "finish_reason": "stop",
+     "completion_tokens": 2441,
+     "prompt_tokens": 408,
+     "tok_per_s": 109.4,
+     "reasoning_chars": 6941,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import java.io.*;\nimport java.util.*;\nimport java.text.DecimalFormat;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        String path = \"__FIXTURE_DIR__/employees.csv\";\n\n        BufferedReader br = new BufferedReader(new FileReader(path));\n        String line = br.readLine(); // skip header\n\n        Map<String, List<Double>> deptSalaries = new TreeMap<>();\n        Map<String, Integer> deptCounts = new TreeMap<>();\n        String highestName = \"\";\n        double highestSalary = -1;\n        double totalBudget = 0;\n\n        while ((line = br.readLine()) != null) {\n            if (line.trim().isEmpty()) continue;\n            String[] parts = line.split(\",\");\n            String name = parts[1].trim();\n            String department = parts[2].trim();\n            String salaryStr = parts[3].trim().replace(\"$\", \"\").replace(\",\", \"\");\n            double salary = Double.parseDouble(salaryStr);\n\n            deptSalaries.computeIfAbsent(department, k -> new ArrayList<>()).add(salary);\n            deptCounts.put(department, deptCounts.getOrDefault(department, 0) + 1);\n\n            if (salary > highestSalary) {\n                highestSalary = salary;\n                highestName = name;\n            }\n\n            totalBudget += salary;\n        }\n        br.close();\n\n        DecimalFormat avgFmt = new DecimalFormat(\"#,##0.00\");\n        DecimalFormat intFmt = new DecimalFormat(\"#,##0\");\n\n        System.out.println(\"=== Salary Report ===\");\n        System.out.println();\n        System.out.println(\"Average Salary by Department:\");\n        for (Map.Entry<String, List<Double>> entry : deptSalaries.entrySet()) {\n            double avg = entry.getValue().stream().mapToDouble(Double::doubleValue).average().orElse(0);\n            System.out.println(\"  \" + entry.getKey() + \": $\" + avgFmt.format(avg));\n        }\n        System.out.println();\n        System.out.println(\"Highest Paid: \" + highestName + "
+    }
+   ]
+  },
+  {
+   "challenge": "csv_analysis",
+   "category": "data",
+   "language": "swift",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 20.3,
+     "finish_reason": "stop",
+     "completion_tokens": 2120,
+     "prompt_tokens": 404,
+     "tok_per_s": 104.5,
+     "reasoning_chars": 5185,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import Foundation\n\nlet filePath = \"__FIXTURE_DIR__/employees.csv\"\n\nguard let content = try? String(contentsOfFile: filePath, encoding: .utf8) else {\n    FileHandle.standardError.write(\"Error reading file\\n\".data(using: .utf8)!)\n    exit(1)\n}\n\nlet lines = content.components(separatedBy: \"\\n\").map { $0.replacingOccurrences(of: \"\\r\", with: \"\") }.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }\n\nvar departments: [String: [Double]] = [:]\nvar names: [String] = []\nvar salaries: [Double] = []\n\nfor line in lines.dropFirst() {\n    let cols = line.components(separatedBy: \",\")\n    guard cols.count >= 6 else { continue }\n    let name = cols[1].trimmingCharacters(in: .whitespaces)\n    let dept = cols[2].trimmingCharacters(in: .whitespaces)\n    let salary = Double(cols[3].trimmingCharacters(in: .whitespaces)) ?? 0\n    departments[dept, default: []].append(salary)\n    names.append(name)\n    salaries.append(salary)\n}\n\nfunc formatInt(_ value: Double) -> String {\n    let f = NumberFormatter()\n    f.numberStyle = .decimal\n    f.groupingSeparator = \",\"\n    f.usesGroupingSeparator = true\n    f.minimumFractionDigits = 0\n    f.maximumFractionDigits = 0\n    return f.string(from: NSNumber(value: Int(value.rounded()))) ?? \"0\"\n}\n\nfunc formatDec(_ value: Double) -> String {\n    let f = NumberFormatter()\n    f.numberStyle = .decimal\n    f.groupingSeparator = \",\"\n    f.usesGroupingSeparator = true\n    f.minimumFractionDigits = 2\n    f.maximumFractionDigits = 2\n    return f.string(from: NSNumber(value: value)) ?? \"0.00\"\n}\n\nprint(\"=== Salary Report ===\")\nprint(\"\")\nprint(\"Average Salary by Department:\")\nlet sortedDepts = departments.keys.sorted()\nfor dept in sortedDepts {\n    let sals = departments[dept]!\n    let avg = sals.reduce(0, +) / Double(sals.count)\n    print(\"  \\(dept): $\\(formatDec(avg))\")\n}\nprint(\"\")\n\nvar maxIdx = 0\nfor i in 1..<salaries.count {\n    if salaries[i] > salaries[maxIdx] { maxIdx = i }\n}\nprint(\"Highest Paid: \\(n"
+    }
+   ]
+  },
+  {
+   "challenge": "json_deep_merge",
+   "category": "data",
+   "language": "rust",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 79.7,
+     "finish_reason": "stop",
+     "completion_tokens": 9901,
+     "prompt_tokens": 390,
+     "tok_per_s": 124.2,
+     "reasoning_chars": 26766,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "use std::collections::BTreeMap;\nuse std::fs;\n\n#[derive(Debug, Clone)]\nenum JsonValue {\n    Null,\n    Bool(bool),\n    Number(f64),\n    String(String),\n    Array(Vec<JsonValue>),\n    Object(BTreeMap<String, JsonValue>),\n}\n\nstruct Parser {\n    data: Vec<char>,\n    pos: usize,\n}\n\nimpl Parser {\n    fn new(s: &str) -> Self {\n        Parser { data: s.chars().collect(), pos: 0 }\n    }\n\n    fn peek(&self) -> Option<char> {\n        self.data.get(self.pos).copied()\n    }\n\n    fn next(&mut self) -> Option<char> {\n        let c = self.peek();\n        if c.is_some() {\n            self.pos += 1;\n        }\n        c\n    }\n\n    fn skip_whitespace(&mut self) {\n        while let Some(c) = self.peek() {\n            if c == ' ' || c == '\\t' || c == '\\n' || c == '\\r' {\n                self.pos += 1;\n            } else {\n                break;\n            }\n        }\n    }\n\n    fn parse_value(&mut self) -> JsonValue {\n        self.skip_whitespace();\n        match self.peek() {\n            Some('{') => self.parse_object(),\n            Some('[') => self.parse_array(),\n            Some('\"') => JsonValue::String(self.parse_string()),\n            Some('t') => { self.expect_word(\"true\"); JsonValue::Bool(true) }\n            Some('f') => { self.expect_word(\"false\"); JsonValue::Bool(false) }\n            Some('n') => { self.expect_word(\"null\"); JsonValue::Null }\n            Some(c) if c == '-' || c.is_ascii_digit() => self.parse_number(),\n            _ => panic!(\"Unexpected character at position {}\", self.pos),\n        }\n    }\n\n    fn expect_word(&mut self, word: &str) {\n        for c in word.chars() {\n            assert_eq!(self.next(), Some(c), \"Expected '{}' in keyword at pos {}\", c, self.pos);\n        }\n    }\n\n    fn parse_string(&mut self) -> String {\n        assert_eq!(self.next(), Some('\"'), \"Expected opening quote\");\n        let mut result = String::new();\n        loop {\n            let c = self.next().expect(\"Unexpected end of string\");\n            match c {\n                '\"' => break,\n "
+    }
+   ]
+  },
+  {
+   "challenge": "csv_analysis",
+   "category": "data",
+   "language": "typescript",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 20.8,
+     "finish_reason": "stop",
+     "completion_tokens": 2871,
+     "prompt_tokens": 372,
+     "tok_per_s": 138.4,
+     "reasoning_chars": 6727,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import * as fs from 'fs';\n\nconst csvPath = '__FIXTURE_DIR__/employees.csv';\n\nconst content = fs.readFileSync(csvPath, 'utf-8').replace(/^\\uFEFF/, '');\nconst lines = content.trim().split(/\\r?\\n/);\n\ninterface Employee {\n  employee_id: string;\n  name: string;\n  department: string;\n  salary: number;\n  start_date: string;\n  rating: string;\n}\n\nconst employees: Employee[] = [];\nfor (let i = 1; i < lines.length; i++) {\n  const parts = lines[i].split(',');\n  if (parts.length < 6) continue;\n  employees.push({\n    employee_id: parts[0].trim(),\n    name: parts[1].trim(),\n    department: parts[2].trim(),\n    salary: parseFloat(parts[3]),\n    start_date: parts[4].trim(),\n    rating: parts[5].trim(),\n  });\n}\n\nfunction formatWithCommas(n: number, decimals: number): string {\n  const fixed = n.toFixed(decimals);\n  const [intPart, decPart] = fixed.split('.');\n  const intFormatted = intPart.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');\n  return decPart !== undefined ? `${intFormatted}.${decPart}` : intFormatted;\n}\n\n// Average salary by department\nconst deptSalaries: Map<string, number[]> = new Map();\nfor (const emp of employees) {\n  if (!deptSalaries.has(emp.department)) {\n    deptSalaries.set(emp.department, []);\n  }\n  deptSalaries.get(emp.department)!.push(emp.salary);\n}\nconst sortedDepts = Array.from(deptSalaries.keys()).sort();\n\n// Highest paid\nlet highestEmp = employees[0];\nfor (const emp of employees) {\n  if (emp.salary > highestEmp.salary) {\n    highestEmp = emp;\n  }\n}\n\n// Departments with >2 employees\nconst deptCounts: Map<string, number> = new Map();\nfor (const emp of employees) {\n  deptCounts.set(emp.department, (deptCounts.get(emp.department) || 0) + 1);\n}\nconst deptsWithMoreThan2 = Array.from(deptCounts.entries())\n  .filter(([, count]) => count > 2)\n  .sort((a, b) => a[0].localeCompare(b[0]));\n\n// Total budget\nconst totalBudget = employees.reduce((sum, emp) => sum + emp.salary, 0);\n\n// Build output\nconst out: string[] = [];\nou"
+    }
+   ]
+  },
+  {
+   "challenge": "json_deep_merge",
+   "category": "data",
+   "language": "c",
+   "score": 0.5,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 68.9,
+     "finish_reason": "stop",
+     "completion_tokens": 9183,
+     "prompt_tokens": 419,
+     "tok_per_s": 133.3,
+     "reasoning_chars": 11361,
+     "error": "",
+     "stage": "build",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\n\ntypedef enum {\n    JSON_NULL,\n    JSON_BOOL,\n    JSON_NUMBER,\n    JSON_STRING,\n    JSON_ARRAY,\n    JSON_OBJECT\n} json_type;\n\ntypedef struct json_value {\n    json_type type;\n    int boolean;\n    double number;\n    char *num_str;\n    char *string;\n    struct json_value **items;\n    int item_count;\n    int item_cap;\n    char **keys;\n    struct json_value **values;\n    int key_count;\n    int key_cap;\n} json_value;\n\ntypedef struct {\n    const char *buf;\n    long pos;\n    long len;\n} parser;\n\nstatic void skip_ws(parser *p) {\n    while (p->pos < p->len) {\n        char c = p->buf[p->pos];\n        if (c == ' ' || c == '\\t' || c == '\\n' || c == '\\r')\n            p->pos++;\n        else\n            break;\n    }\n}\n\nstatic json_value *new_value(json_type t) {\n    json_value *v = (json_value *)calloc(1, sizeof(json_value));\n    v->type = t;\n    return v;\n}\n\nstatic void free_value(json_value *v) {\n    if (!v) return;\n    if (v->type == JSON_STRING) free(v->string);\n    if (v->type == JSON_NUMBER) free(v->num_str);\n    if (v->type == JSON_ARRAY) {\n        for (int i = 0; i < v->item_count; i++) free_value(v->items[i]);\n        free(v->items);\n    }\n    if (v->type == JSON_OBJECT) {\n        for (int i = 0; i < v->key_count; i++) {\n            free(v->keys[i]);\n            free_value(v->values[i]);\n        }\n        free(v->keys);\n        free(v->values);\n    }\n    free(v);\n}\n\nstatic char *parse_string_raw(parser *p) {\n    if (p->pos >= p->len || p->buf[p->pos] != '\"') return NULL;\n    p->pos++;\n    long start = p->pos;\n    long cap = 256;\n    char *out = (char *)malloc(cap);\n    long len = 0;\n    while (p->pos < p->len) {\n        char c = p->buf[p->pos];\n        if (c == '\"') {\n            p->pos++;\n            out[len] = '\\0';\n            return out;\n        }\n        if (c == '\\\\') {\n            p->pos++;\n            char e = p->buf[p->pos];\n            char decoded;\n            switch "
+    },
+    {
+     "n": 2,
+     "seconds": 43.0,
+     "finish_reason": "stop",
+     "completion_tokens": 6085,
+     "prompt_tokens": 7224,
+     "tok_per_s": 141.4,
+     "reasoning_chars": 325,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <ctype.h>\n\ntypedef enum {\n    JSON_NULL,\n    JSON_BOOL,\n    JSON_NUMBER,\n    JSON_STRING,\n    JSON_ARRAY,\n    JSON_OBJECT\n} json_type;\n\ntypedef struct json_value {\n    json_type type;\n    int boolean;\n    double number;\n    char *num_str;\n    char *string;\n    struct json_value **items;\n    int item_count;\n    int item_cap;\n    char **keys;\n    struct json_value **values;\n    int key_count;\n    int key_cap;\n} json_value;\n\ntypedef struct {\n    const char *buf;\n    long pos;\n    long len;\n} parser;\n\nstatic json_value *parse_value(parser *p);\n\nstatic void skip_ws(parser *p) {\n    while (p->pos < p->len) {\n        char c = p->buf[p->pos];\n        if (c == ' ' || c == '\\t' || c == '\\n' || c == '\\r')\n            p->pos++;\n        else\n            break;\n    }\n}\n\nstatic json_value *new_value(json_type t) {\n    json_value *v = (json_value *)calloc(1, sizeof(json_value));\n    v->type = t;\n    return v;\n}\n\nstatic void free_value(json_value *v) {\n    if (!v) return;\n    if (v->type == JSON_STRING) free(v->string);\n    if (v->type == JSON_NUMBER) free(v->num_str);\n    if (v->type == JSON_ARRAY) {\n        for (int i = 0; i < v->item_count; i++) free_value(v->items[i]);\n        free(v->items);\n    }\n    if (v->type == JSON_OBJECT) {\n        for (int i = 0; i < v->key_count; i++) {\n            free(v->keys[i]);\n            free_value(v->values[i]);\n        }\n        free(v->keys);\n        free(v->values);\n    }\n    free(v);\n}\n\nstatic char *parse_string_raw(parser *p) {\n    if (p->pos >= p->len || p->buf[p->pos] != '\"') return NULL;\n    p->pos++;\n    long cap = 256;\n    char *out = (char *)malloc(cap);\n    long len = 0;\n    while (p->pos < p->len) {\n        char c = p->buf[p->pos];\n        if (c == '\"') {\n            p->pos++;\n            out[len] = '\\0';\n            return out;\n        }\n        if (c == '\\\\') {\n            p->pos++;\n            char e = p->buf[p->pos];\n            char decoded;\n"
+    }
+   ]
+  },
+  {
+   "challenge": "log_parser",
+   "category": "text",
+   "language": "python",
+   "score": 0.5,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 14.0,
+     "finish_reason": "stop",
+     "completion_tokens": 1702,
+     "prompt_tokens": 365,
+     "tok_per_s": 121.8,
+     "reasoning_chars": 4544,
+     "error": "",
+     "stage": "run",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "import re\nfrom collections import Counter\n\nlog_file = \"__FIXTURE_DIR__/app.log\"\n\npattern = r'\\[(\\d{4}-\\d{2}-\\d{2} (\\d{2}:\\d{2}:\\d{2}))\\] (\\w+) \\(([^)]+)\\) - (.+)'\n\nlevel_counts = Counter()\ncomponent_error_counts = Counter()\nerror_messages = set()\nhour_counts = Counter()\n\nwith open(log_file, 'r') as f:\n    for line in f:\n        line = line.strip()\n        if not line:\n            continue\n        m = re.match(pattern, line)\n        if m:\n            timestamp, level, component, message = m.groups()\n            hour = timestamp[11:13]\n            level_counts[level] += 1\n            hour_counts[hour] += 1\n            if level == \"ERROR\":\n                component_error_counts[component] += 1\n                error_messages.add(message)\n\nprint(\"=== Log Analysis ===\")\nprint()\nprint(\"Entries by Level:\")\nfor level in sorted(level_counts.keys()):\n    print(f\"  {level}: {level_counts[level]}\")\nprint()\ntop_comp, top_comp_count = component_error_counts.most_common(1)[0]\nprint(f\"Component with Most Errors: {top_comp} ({top_comp_count} errors)\")\nprint()\nprint(\"Unique Error Messages:\")\nfor msg in sorted(error_messages):\n    print(f\"  - {msg}\")\nprint()\ntop_hour, top_hour_count = hour_counts.most_common(1)[0]\nprint(f\"Busiest Hour: {top_hour}:00 ({top_hour_count} entries)\")"
+    },
+    {
+     "n": 2,
+     "seconds": 6.2,
+     "finish_reason": "stop",
+     "completion_tokens": 890,
+     "prompt_tokens": 915,
+     "tok_per_s": 143.9,
+     "reasoning_chars": 1230,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import re\nfrom collections import Counter\n\nlog_file = \"__FIXTURE_DIR__/app.log\"\n\npattern = r'\\[(\\d{4}-\\d{2}-\\d{2} (?:\\d{2}:\\d{2}:\\d{2}))\\] (\\w+) \\(([^)]+)\\) - (.+)'\n\nlevel_counts = Counter()\ncomponent_error_counts = Counter()\nerror_messages = set()\nhour_counts = Counter()\n\nwith open(log_file, 'r') as f:\n    for line in f:\n        line = line.strip()\n        if not line:\n            continue\n        m = re.match(pattern, line)\n        if m:\n            timestamp, level, component, message = m.groups()\n            hour = timestamp[11:13]\n            level_counts[level] += 1\n            hour_counts[hour] += 1\n            if level == \"ERROR\":\n                component_error_counts[component] += 1\n                error_messages.add(message)\n\nprint(\"=== Log Analysis ===\")\nprint()\nprint(\"Entries by Level:\")\nfor level in sorted(level_counts.keys()):\n    print(f\"  {level}: {level_counts[level]}\")\nprint()\ntop_comp, top_comp_count = component_error_counts.most_common(1)[0]\nprint(f\"Component with Most Errors: {top_comp} ({top_comp_count} errors)\")\nprint()\nprint(\"Unique Error Messages:\")\nfor msg in sorted(error_messages):\n    print(f\"  - {msg}\")\nprint()\ntop_hour, top_hour_count = hour_counts.most_common(1)[0]\nprint(f\"Busiest Hour: {top_hour}:00 ({top_hour_count} entries)\")"
+    }
+   ]
+  },
+  {
+   "challenge": "log_parser",
+   "category": "text",
+   "language": "java",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 20.8,
+     "finish_reason": "stop",
+     "completion_tokens": 2653,
+     "prompt_tokens": 401,
+     "tok_per_s": 127.6,
+     "reasoning_chars": 6952,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import java.io.*;\nimport java.util.*;\nimport java.util.regex.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        String filePath = \"__FIXTURE_DIR__/app.log\";\n\n        List<String> lines = new ArrayList<>();\n        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {\n            String line;\n            while ((line = br.readLine()) != null) {\n                if (!line.trim().isEmpty()) {\n                    lines.add(line.trim());\n                }\n            }\n        }\n\n        Pattern pattern = Pattern.compile(\"^\\\\[(\\\\d{4}-\\\\d{2}-\\\\d{2} (\\\\d{2}):(\\\\d{2}):(\\\\d{2}))\\\\] (\\\\S+) \\\\(([^)]+)\\\\) - (.+)$\");\n\n        Map<String, Integer> levelCounts = new TreeMap<>();\n        Map<String, Integer> errorComponentCounts = new TreeMap<>();\n        Set<String> errorMessages = new TreeSet<>();\n        Map<String, Integer> hourCounts = new TreeMap<>();\n\n        for (String line : lines) {\n            Matcher m = pattern.matcher(line);\n            if (m.matches()) {\n                String hour = m.group(2);\n                String level = m.group(5);\n                String component = m.group(6);\n                String message = m.group(7);\n\n                levelCounts.merge(level, 1, Integer::sum);\n\n                if (level.equalsIgnoreCase(\"ERROR\")) {\n                    errorComponentCounts.merge(component, 1, Integer::sum);\n                    errorMessages.add(message);\n                }\n\n                hourCounts.merge(hour, 1, Integer::sum);\n            }\n        }\n\n        StringBuilder sb = new StringBuilder();\n        sb.append(\"=== Log Analysis ===\\n\");\n        sb.append(\"\\n\");\n        sb.append(\"Entries by Level:\\n\");\n        for (Map.Entry<String, Integer> e : levelCounts.entrySet()) {\n            sb.append(\"  \").append(e.getKey()).append(\": \").append(e.getValue()).append(\"\\n\");\n        }\n        sb.append(\"\\n\");\n\n        String topComponent = \"\";\n  "
+    }
+   ]
+  },
+  {
+   "challenge": "csv_analysis",
+   "category": "data",
+   "language": "rust",
+   "score": 0.5,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 36.3,
+     "finish_reason": "stop",
+     "completion_tokens": 4612,
+     "prompt_tokens": 430,
+     "tok_per_s": 127.0,
+     "reasoning_chars": 12755,
+     "error": "",
+     "stage": "output",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "use std::collections::BTreeMap;\nuse std::fs;\n\nfn format_comma_int(n: i64) -> String {\n    let s = n.to_string();\n    let negative = s.starts_with('-');\n    let digits = if negative { &s[1..] } else { s.as_str() };\n    let bytes = digits.as_bytes();\n    let len = bytes.len();\n    let mut result = String::new();\n    if negative {\n        result.push('-');\n    }\n    for (i, &b) in bytes.iter().enumerate() {\n        result.push(b as char);\n        let remaining = len - i - 1;\n        if remaining > 0 && remaining % 3 == 0 {\n            result.push(',');\n        }\n    }\n    result\n}\n\nfn format_comma_decimal(n: f64) -> String {\n    let formatted = format!(\"{:.2}\", n);\n    let negative = formatted.starts_with('-');\n    let s = if negative { &formatted[1..] } else { formatted.as_str() };\n    let dot_pos = s.find('.').unwrap();\n    let int_part = &s[..dot_pos];\n    let dec_part = &s[dot_pos..];\n\n    let mut result = String::new();\n    if negative {\n        result.push('-');\n    }\n    let bytes = int_part.as_bytes();\n    let len = bytes.len();\n    for (i, &b) in bytes.iter().enumerate() {\n        result.push(b as char);\n        let remaining = len - i - 1;\n        if remaining > 0 && remaining % 3 == 0 {\n            result.push(',');\n        }\n    }\n    result.push_str(dec_part);\n    result\n}\n\nfn main() {\n    let path = \"__FIXTURE_DIR__/employees.csv\";\n    let content = fs::read_to_string(path).expect(\"Failed to read CSV file\");\n\n    let mut lines = content.lines();\n    let _header = lines.next();\n\n    let mut dept_salaries: BTreeMap<String, (f64, u64)> = BTreeMap::new();\n    let mut highest_name = String::new();\n    let mut highest_salary: f64 = f64::MIN;\n    let mut total_budget: f64 = 0.0;\n\n    for line in lines {\n        let line = line.trim();\n        if line.is_empty() {\n            continue;\n        }\n        let fields: Vec<&str> = line.split(',').collect();\n        if fields.len() < 6 {\n            continue;\n    "
+    },
+    {
+     "n": 2,
+     "seconds": 8.0,
+     "finish_reason": "stop",
+     "completion_tokens": 1154,
+     "prompt_tokens": 1686,
+     "tok_per_s": 143.7,
+     "reasoning_chars": 599,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "use std::collections::BTreeMap;\nuse std::fs;\n\nfn format_comma_int(n: i64) -> String {\n    let s = n.to_string();\n    let negative = s.starts_with('-');\n    let digits = if negative { &s[1..] } else { s.as_str() };\n    let bytes = digits.as_bytes();\n    let len = bytes.len();\n    let mut result = String::new();\n    if negative {\n        result.push('-');\n    }\n    for (i, &b) in bytes.iter().enumerate() {\n        result.push(b as char);\n        let remaining = len - i - 1;\n        if remaining > 0 && remaining % 3 == 0 {\n            result.push(',');\n        }\n    }\n    result\n}\n\nfn format_comma_decimal(n: f64) -> String {\n    let formatted = format!(\"{:.2}\", n);\n    let negative = formatted.starts_with('-');\n    let s = if negative { &formatted[1..] } else { formatted.as_str() };\n    let dot_pos = s.find('.').unwrap();\n    let int_part = &s[..dot_pos];\n    let dec_part = &s[dot_pos..];\n\n    let mut result = String::new();\n    if negative {\n        result.push('-');\n    }\n    let bytes = int_part.as_bytes();\n    let len = bytes.len();\n    for (i, &b) in bytes.iter().enumerate() {\n        result.push(b as char);\n        let remaining = len - i - 1;\n        if remaining > 0 && remaining % 3 == 0 {\n            result.push(',');\n        }\n    }\n    result.push_str(dec_part);\n    result\n}\n\nfn main() {\n    let path = \"__FIXTURE_DIR__/employees.csv\";\n    let content = fs::read_to_string(path).expect(\"Failed to read CSV file\");\n\n    let mut lines = content.lines();\n    let _header = lines.next();\n\n    let mut dept_salaries: BTreeMap<String, (f64, u64)> = BTreeMap::new();\n    let mut highest_name = String::new();\n    let mut highest_salary: f64 = f64::MIN;\n    let mut total_budget: f64 = 0.0;\n\n    for line in lines {\n        let line = line.trim();\n        if line.is_empty() {\n            continue;\n        }\n        let fields: Vec<&str> = line.split(',').collect();\n        if fields.len() < 6 {\n            continue;\n    "
+    }
+   ]
+  },
+  {
+   "challenge": "log_parser",
+   "category": "text",
+   "language": "typescript",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 15.5,
+     "finish_reason": "stop",
+     "completion_tokens": 2218,
+     "prompt_tokens": 365,
+     "tok_per_s": 143.1,
+     "reasoning_chars": 5450,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import * as fs from 'fs';\n\nconst logFile = '__FIXTURE_DIR__/app.log';\n\nconst content = fs.readFileSync(logFile, 'utf-8');\nconst lines = content.split('\\n').filter((line: string) => line.trim() !== '');\n\nconst levelCounts: Record<string, number> = {};\nconst componentErrors: Record<string, number> = {};\nconst errorMessages: Set<string> = new Set();\nconst hourCounts: Record<string, number> = {};\n\nconst lineRegex = /^\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\\] (\\w+) \\(([^)]+)\\) - (.+)$/;\n\nfor (const line of lines) {\n  const match = line.match(lineRegex);\n  if (!match) continue;\n\n  const timestamp = match[1];\n  const level = match[2];\n  const component = match[3];\n  const message = match[4];\n\n  levelCounts[level] = (levelCounts[level] || 0) + 1;\n\n  const hour = timestamp.split(' ')[1].substring(0, 2);\n  hourCounts[hour] = (hourCounts[hour] || 0) + 1;\n\n  if (level === 'ERROR') {\n    componentErrors[component] = (componentErrors[component] || 0) + 1;\n    errorMessages.add(message);\n  }\n}\n\nlet out = '=== Log Analysis ===\\n';\nout += '\\n';\nout += 'Entries by Level:\\n';\nconst sortedLevels = Object.keys(levelCounts).sort();\nfor (const level of sortedLevels) {\n  out += `  ${level}: ${levelCounts[level]}\\n`;\n}\nout += '\\n';\n\nlet maxComponent = '';\nlet maxErrCount = 0;\nconst sortedComponents = Object.keys(componentErrors).sort();\nfor (const comp of sortedComponents) {\n  if (componentErrors[comp] > maxErrCount) {\n    maxErrCount = componentErrors[comp];\n    maxComponent = comp;\n  }\n}\nout += `Component with Most Errors: ${maxComponent} (${maxErrCount} errors)\\n`;\nout += '\\n';\n\nout += 'Unique Error Messages:\\n';\nconst sortedMessages = Array.from(errorMessages).sort();\nfor (const msg of sortedMessages) {\n  out += `  - ${msg}\\n`;\n}\nout += '\\n';\n\nlet busiestHour = '00';\nlet busiestCount = 0;\nconst sortedHours = Object.keys(hourCounts).sort();\nfor (const h of sortedHours) {\n  if (hourCounts[h] > busiestCount) {\n    busiestCount = hourCo"
+    }
+   ]
+  },
+  {
+   "challenge": "log_parser",
+   "category": "text",
+   "language": "swift",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 24.4,
+     "finish_reason": "stop",
+     "completion_tokens": 3164,
+     "prompt_tokens": 397,
+     "tok_per_s": 129.6,
+     "reasoning_chars": 8497,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import Foundation\n\nlet filePath = \"__FIXTURE_DIR__/app.log\"\n\nguard let content = try? String(contentsOfFile: filePath, encoding: .utf8) else {\n    FileHandle.standardError.write(Data(\"Cannot read file\\n\".utf8))\n    exit(1)\n}\n\nlet lines = content.components(separatedBy: \"\\n\").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }\n\nvar levelCounts: [String: Int] = [:]\nvar componentErrorCounts: [String: Int] = [:]\nvar errorMessages: Set<String> = []\nvar hourCounts: [String: Int] = [:]\n\nfor line in lines {\n    guard line.hasPrefix(\"[\") else { continue }\n    guard let closeBracket = line.firstIndex(of: \"]\") else { continue }\n\n    let timestamp = String(line[line.index(after: line.startIndex)..<closeBracket])\n\n    let rest = String(line[line.index(after: closeBracket)...]).trimmingCharacters(in: .whitespaces)\n\n    guard let spaceIdx = rest.firstIndex(of: \" \") else { continue }\n    let level = String(rest[rest.startIndex..<spaceIdx])\n\n    let afterLevel = String(rest[rest.index(after: spaceIdx)...])\n    guard afterLevel.hasPrefix(\"(\") else { continue }\n    guard let closeParen = afterLevel.firstIndex(of: \")\") else { continue }\n    let component = String(afterLevel[afterLevel.index(after: afterLevel.startIndex)..<closeParen])\n\n    let afterComponent = String(afterLevel[afterLevel.index(after: closeParen)...])\n    guard afterComponent.hasPrefix(\" - \") else { continue }\n    let message = String(afterComponent.dropFirst(3))\n\n    let parts = timestamp.split(separator: \" \")\n    guard parts.count == 2 else { continue }\n    let timePart = parts[1]\n    let hour = String(timePart.prefix(2))\n\n    levelCounts[level, default: 0] += 1\n\n    if level == \"ERROR\" {\n        componentErrorCounts[component, default: 0] += 1\n        errorMessages.insert(message)\n    }\n\n    hourCounts[hour, default: 0] += 1\n}\n\nvar out = \"\"\nout += \"=== Log Analysis ===\\n\"\nout += \"\\n\"\nout += \"Entries by Level:\\n\"\nfor (level, count) in levelCounts.sorted(b"
+    }
+   ]
+  },
+  {
+   "challenge": "http_client",
+   "category": "api",
+   "language": "python",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 5.6,
+     "finish_reason": "stop",
+     "completion_tokens": 886,
+     "prompt_tokens": 350,
+     "tok_per_s": 157.5,
+     "reasoning_chars": 2240,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import json\nimport urllib.request\n\nurl = \"http://127.0.0.1:18923/api/products\"\nresponse = urllib.request.urlopen(url)\ndata = json.loads(response.read().decode(\"utf-8\"))\n\nfiltered = [p for p in data if p[\"price\"] > 50.00]\nfiltered.sort(key=lambda p: p[\"name\"])\n\nprint(\"=== Filtered Products (price > $50.00) ===\")\nprint()\nfor p in filtered:\n    print(f\"{p['name']}: ${p['price']:.2f}\")\nprint()\nprint(f\"Count: {len(filtered)}\")\ntotal = sum(p[\"price\"] for p in filtered)\nprint(f\"Total: ${total:.2f}\")"
+    }
+   ]
+  },
+  {
+   "challenge": "csv_analysis",
+   "category": "data",
+   "language": "c",
+   "score": 0.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 28.9,
+     "finish_reason": "stop",
+     "completion_tokens": 3878,
+     "prompt_tokens": 459,
+     "tok_per_s": 134.3,
+     "reasoning_chars": 5533,
+     "error": "",
+     "stage": "output",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n\ntypedef struct {\n    char *name;\n    char *department;\n    double salary;\n} Employee;\n\ntypedef struct {\n    char *name;\n    double sum;\n    int count;\n} DeptAgg;\n\nstatic int cmp_depts(const void *a, const void *b) {\n    return strcmp(*(const char *const *)a, *(const char *const *)b);\n}\n\nstatic int cmp_depts_agg(const void *a, const void *b) {\n    return strcmp(((const DeptAgg *)a)->name, ((const DeptAgg *)b)->name);\n}\n\nstatic void fmt_money_int(long val, char *buf, size_t bufsize) {\n    char digits[32];\n    int dpos = 0;\n    int neg = 0;\n    if (val < 0) { neg = 1; val = -val; }\n    if (val == 0) digits[dpos++] = '0';\n    while (val > 0) { digits[dpos++] = (char)('0' + (val % 10)); val /= 10; }\n    int pos = 0;\n    if (neg) buf[pos++] = '-';\n    buf[pos++] = '$';\n    for (int i = dpos - 1; i >= 0; i--) {\n        int remaining = i;\n        if (remaining > 0 && (remaining % 3 == 0)) buf[pos++] = ',';\n        buf[pos++] = digits[i];\n    }\n    buf[pos] = '\\0';\n    (void)bufsize;\n}\n\nstatic void fmt_money_double(double val, char *buf, size_t bufsize) {\n    long ip = (long)floor(val + 0.5);\n    int cents = (int)lround((val - (double)ip) * 100.0);\n    if (cents < 0) { ip -= 1; cents += 100; }\n    if (cents >= 100) { ip += 1; cents -= 100; }\n    char digits[32];\n    int dpos = 0;\n    int neg = 0;\n    long v = ip;\n    if (v < 0) { neg = 1; v = -v; }\n    if (v == 0) digits[dpos++] = '0';\n    while (v > 0) { digits[dpos++] = (char)('0' + (v % 10)); v /= 10; }\n    int pos = 0;\n    if (neg) buf[pos++] = '-';\n    buf[pos++] = '$';\n    for (int i = dpos - 1; i >= 0; i--) {\n        int remaining = i;\n        if (remaining > 0 && (remaining % 3 == 0)) buf[pos++] = ',';\n        buf[pos++] = digits[i];\n    }\n    buf[pos++] = '.';\n    buf[pos++] = (char)('0' + cents / 10);\n    buf[pos++] = (char)('0' + cents % 10);\n    buf[pos] = '\\0';\n    (void)bufsize;\n}\n\nstatic char *dupstr(const char *s) {\n    size_t len ="
+    },
+    {
+     "n": 2,
+     "seconds": 41.4,
+     "finish_reason": "stop",
+     "completion_tokens": 5198,
+     "prompt_tokens": 2872,
+     "tok_per_s": 125.5,
+     "reasoning_chars": 7744,
+     "error": "",
+     "stage": "output",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n\ntypedef struct {\n    char *name;\n    char *department;\n    double salary;\n} Employee;\n\ntypedef struct {\n    char *name;\n    double sum;\n    int count;\n} DeptAgg;\n\nstatic int cmp_depts(const void *a, const void *b) {\n    return strcmp(*(const char *const *)a, *(const char *const *)b);\n}\n\nstatic void fmt_money_int(long val, char *buf, size_t bufsize) {\n    char digits[32];\n    int dpos = 0;\n    int neg = 0;\n    if (val < 0) { neg = 1; val = -val; }\n    if (val == 0) digits[dpos++] = '0';\n    while (val > 0) { digits[dpos++] = (char)('0' + (val % 10)); val /= 10; }\n    int pos = 0;\n    if (neg) buf[pos++] = '-';\n    buf[pos++] = '$';\n    for (int i = dpos - 1; i >= 0; i--) {\n        int remaining = i;\n        if (remaining > 0 && (remaining % 3 == 0)) buf[pos++] = ',';\n        buf[pos++] = digits[i];\n    }\n    buf[pos] = '\\0';\n    (void)bufsize;\n}\n\nstatic void fmt_money_double(double val, char *buf, size_t bufsize) {\n    long ip = (long)floor(val + 0.5);\n    int cents = (int)lround((val - (double)ip) * 100.0);\n    if (cents < 0) { ip -= 1; cents += 100; }\n    if (cents >= 100) { ip += 1; cents -= 100; }\n    char digits[32];\n    int dpos = 0;\n    int neg = 0;\n    long v = ip;\n    if (v < 0) { neg = 1; v = -v; }\n    if (v == 0) digits[dpos++] = '0';\n    while (v > 0) { digits[dpos++] = (char)('0' + (v % 10)); v /= 10; }\n    int pos = 0;\n    if (neg) buf[pos++] = '-';\n    buf[pos++] = '$';\n    for (int i = dpos - 1; i >= 0; i--) {\n        int remaining = i;\n        if (remaining > 0 && (remaining % 3 == 0)) buf[pos++] = ',';\n        buf[pos++] = digits[i];\n    }\n    buf[pos++] = '.';\n    buf[pos++] = (char)('0' + cents / 10);\n    buf[pos++] = (char)('0' + cents % 10);\n    buf[pos] = '\\0';\n    (void)bufsize;\n}\n\nstatic char *dupstr(const char *s) {\n    size_t len = strlen(s);\n    char *p = malloc(len + 1);\n    if (p) memcpy(p, s, len + 1);\n    return p;\n}\n\nint main(void) {\n    const char *path = \""
+    }
+   ]
+  },
+  {
+   "challenge": "http_client",
+   "category": "api",
+   "language": "swift",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 8.3,
+     "finish_reason": "stop",
+     "completion_tokens": 1238,
+     "prompt_tokens": 382,
+     "tok_per_s": 149.1,
+     "reasoning_chars": 2897,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import Foundation\n\nlet url = URL(string: \"http://127.0.0.1:18923/api/products\")!\nlet semaphore = DispatchSemaphore(value: 0)\nvar responseData: Data?\n\nlet task = URLSession.shared.dataTask(with: url) { data, response, error in\n    if let data = data {\n        responseData = data\n    }\n    semaphore.signal()\n}\ntask.resume()\nsemaphore.wait()\n\nguard let data = responseData else {\n    exit(1)\n}\n\nguard let jsonArray = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {\n    exit(1)\n}\n\nstruct Product {\n    let name: String\n    let price: Double\n}\n\nvar products: [Product] = []\nfor item in jsonArray {\n    let name = item[\"name\"] as? String ?? \"\"\n    let price = item[\"price\"] as? Double ?? 0\n    products.append(Product(name: name, price: price))\n}\n\nlet filtered = products.filter { $0.price > 50.00 }.sorted { $0.name < $1.name }\n\nprint(\"=== Filtered Products (price > $50.00) ===\")\nprint(\"\")\nfor product in filtered {\n    print(\"\\(product.name): $\\(String(format: \"%.2f\", product.price))\")\n}\nprint(\"\")\nprint(\"Count: \\(filtered.count)\")\nprint(\"Total: $\\(String(format: \"%.2f\", filtered.reduce(0) { $0 + $1.price }))\")"
+    }
+   ]
+  },
+  {
+   "challenge": "log_parser",
+   "category": "text",
+   "language": "rust",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 27.0,
+     "finish_reason": "stop",
+     "completion_tokens": 3579,
+     "prompt_tokens": 423,
+     "tok_per_s": 132.5,
+     "reasoning_chars": 9183,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "use std::collections::{HashMap, HashSet};\nuse std::fs;\n\nfn main() {\n    let path = \"__FIXTURE_DIR__/app.log\";\n    let content = fs::read_to_string(path).expect(\"Failed to read log file\");\n\n    let mut level_counts: HashMap<String, usize> = HashMap::new();\n    let mut error_component_counts: HashMap<String, usize> = HashMap::new();\n    let mut error_messages: Vec<String> = Vec::new();\n    let mut hour_counts: HashMap<u32, usize> = HashMap::new();\n\n    for line in content.lines() {\n        let line = line.trim();\n        if line.is_empty() || !line.starts_with('[') {\n            continue;\n        }\n\n        let bracket_end = match line.find(']') {\n            Some(pos) => pos,\n            None => continue,\n        };\n\n        let timestamp = &line[1..bracket_end];\n        if timestamp.len() < 19 {\n            continue;\n        }\n\n        let hour_str = &timestamp[11..13];\n        let hour: u32 = match hour_str.parse() {\n            Ok(h) => h,\n            Err(_) => continue,\n        };\n\n        let after_bracket = &line[bracket_end + 1..];\n        let after_bracket_trimmed = after_bracket.trim_start();\n\n        let level_end = match after_bracket_trimmed.find(' ') {\n            Some(pos) => pos,\n            None => continue,\n        };\n        let level = &after_bracket_trimmed[..level_end];\n\n        let rest = &after_bracket_trimmed[level_end..];\n\n        let paren_start = match rest.find('(') {\n            Some(pos) => pos,\n            None => continue,\n        };\n        let paren_end = match rest.find(')') {\n            Some(pos) => pos,\n            None => continue,\n        };\n        if paren_end <= paren_start + 1 {\n            continue;\n        }\n        let component = &rest[paren_start + 1..paren_end];\n\n        let after_paren = &rest[paren_end + 1..];\n        let message = if let Some(dash_pos) = after_paren.find(\" - \") {\n            after_paren[dash_pos + 3..].to_string()\n        } else {\n            S"
+    }
+   ]
+  },
+  {
+   "challenge": "http_client",
+   "category": "api",
+   "language": "java",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 20.1,
+     "finish_reason": "stop",
+     "completion_tokens": 2892,
+     "prompt_tokens": 386,
+     "tok_per_s": 144.1,
+     "reasoning_chars": 3638,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import java.io.*;\nimport java.net.*;\nimport java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n\n    static class Product {\n        int id;\n        String name;\n        double price;\n        String category;\n        int stock;\n\n        Product(int id, String name, double price, String category, int stock) {\n            this.id = id;\n            this.name = name;\n            this.price = price;\n            this.category = category;\n            this.stock = stock;\n        }\n    }\n\n    // Minimal JSON parser\n    static class JsonParser {\n        private String s;\n        private int pos;\n\n        JsonParser(String s) {\n            this.s = s;\n            this.pos = 0;\n        }\n\n        void skipWhitespace() {\n            while (pos < s.length() && Character.isWhitespace(s.charAt(pos))) pos++;\n        }\n\n        char peek() {\n            skipWhitespace();\n            return pos < s.length() ? s.charAt(pos) : '\\0';\n        }\n\n        char next() {\n            skipWhitespace();\n            return s.charAt(pos++);\n        }\n\n        void expect(char c) {\n            char ch = next();\n            if (ch != c) throw new RuntimeException(\"Expected '\" + c + \"' but got '\" + ch + \"' at pos \" + (pos - 1));\n        }\n\n        Object parse() {\n            Object result = parseValue();\n            skipWhitespace();\n            return result;\n        }\n\n        Object parseValue() {\n            char c = peek();\n            if (c == '[') return parseArray();\n            if (c == '{') return parseObject();\n            if (c == '\"') return parseString();\n            if (c == '-' || (c >= '0' && c <= '9')) return parseNumber();\n            if (s.startsWith(\"true\", pos)) { pos += 4; return Boolean.TRUE; }\n            if (s.startsWith(\"false\", pos)) { pos += 5; return Boolean.FALSE; }\n            if (s.startsWith(\"null\", pos)) { pos += 4; return null; }\n            throw new RuntimeException(\"Unexpected char '\" + c + \"' at pos \" + pos);\n        }\n\n        List<Object> parseArray("
+    }
+   ]
+  },
+  {
+   "challenge": "http_client",
+   "category": "api",
+   "language": "typescript",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 21.6,
+     "finish_reason": "stop",
+     "completion_tokens": 2815,
+     "prompt_tokens": 350,
+     "tok_per_s": 130.2,
+     "reasoning_chars": 8705,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import * as http from 'http';\n\ninterface Product {\n  id: number;\n  name: string;\n  price: number;\n  category: string;\n  stock: number;\n}\n\nconst req = http.get('http://127.0.0.1:18923/api/products', (res: http.IncomingMessage) => {\n  let data = '';\n  res.on('data', (chunk: Buffer | string) => {\n    data += chunk.toString();\n  });\n  res.on('end', () => {\n    const products: Product[] = JSON.parse(data);\n    const filtered = products.filter((p: Product) => p.price > 50.00);\n    filtered.sort((a: Product, b: Product) => a.name.localeCompare(b.name));\n\n    const output: string[] = [];\n    output.push('=== Filtered Products (price > $50.00) ===');\n    output.push('');\n    for (const p of filtered) {\n      output.push(`${p.name}: $${p.price.toFixed(2)}`);\n    }\n    output.push('');\n    output.push(`Count: ${filtered.length}`);\n    output.push(`Total: $${filtered.reduce((sum: number, p: Product) => sum + p.price, 0).toFixed(2)}`);\n\n    process.stdout.write(output.join('\\n') + '\\n');\n  });\n});\n\nreq.on('error', (err: Error) => {\n  process.stderr.write(err.message + '\\n');\n  process.exit(1);\n});"
+    }
+   ]
+  },
+  {
+   "challenge": "dijkstra_graph",
+   "category": "algo",
+   "language": "python",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 9.6,
+     "finish_reason": "stop",
+     "completion_tokens": 1345,
+     "prompt_tokens": 357,
+     "tok_per_s": 139.4,
+     "reasoning_chars": 3427,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import json\nimport heapq\n\ndef main():\n    with open(\"__FIXTURE_DIR__/graph.json\", \"r\") as f:\n        data = json.load(f)\n\n    nodes = data[\"nodes\"]\n    edges = data[\"edges\"]\n\n    adj = {node: [] for node in nodes}\n    for e in edges:\n        adj[e[\"from\"]].append((e[\"to\"], e[\"weight\"]))\n        adj[e[\"to\"]].append((e[\"from\"], e[\"weight\"]))\n\n    INF = float('inf')\n    dist = {node: INF for node in nodes}\n    dist[\"A\"] = 0\n\n    pq = [(0, \"A\")]\n    visited = set()\n\n    while pq:\n        d, u = heapq.heappop(pq)\n        if u in visited:\n            continue\n        visited.add(u)\n        for v, w in adj.get(u, []):\n            nd = d + w\n            if nd < dist[v]:\n                dist[v] = nd\n                heapq.heappush(pq, (nd, v))\n\n    print(\"=== Shortest Paths from A ===\")\n    print()\n    for node in sorted(nodes):\n        d = dist[node]\n        if d == INF:\n            d_str = \"unreachable\"\n        elif isinstance(d, float) and d == int(d):\n            d_str = str(int(d))\n        else:\n            d_str = str(d)\n        print(f\"A -> {node}: {d_str}\")\n\nmain()"
+    }
+   ]
+  },
+  {
+   "challenge": "http_client",
+   "category": "api",
+   "language": "rust",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 35.8,
+     "finish_reason": "stop",
+     "completion_tokens": 4779,
+     "prompt_tokens": 408,
+     "tok_per_s": 133.4,
+     "reasoning_chars": 9773,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "use std::io::{Read, Write};\nuse std::net::TcpStream;\n\nenum JsonValue {\n    Null,\n    Bool(bool),\n    Number(f64),\n    String(String),\n    Array(Vec<JsonValue>),\n    Object(Vec<(String, JsonValue)>),\n}\n\nimpl JsonValue {\n    fn get(&self, key: &str) -> Option<&JsonValue> {\n        if let JsonValue::Object(fields) = self {\n            for (k, v) in fields {\n                if k == key {\n                    return Some(v);\n                }\n            }\n        }\n        None\n    }\n}\n\nstruct JsonParser {\n    data: Vec<char>,\n    pos: usize,\n}\n\nimpl JsonParser {\n    fn new(s: &str) -> Self {\n        JsonParser {\n            data: s.chars().collect(),\n            pos: 0,\n        }\n    }\n\n    fn skip_whitespace(&mut self) {\n        while self.pos < self.data.len() && self.data[self.pos].is_whitespace() {\n            self.pos += 1;\n        }\n    }\n\n    fn parse_value(&mut self) -> JsonValue {\n        self.skip_whitespace();\n        if self.pos >= self.data.len() {\n            return JsonValue::Null;\n        }\n        let c = self.data[self.pos];\n        match c {\n            '[' => self.parse_array(),\n            '{' => self.parse_object(),\n            '\"' => JsonValue::String(self.parse_string()),\n            't' => {\n                self.pos += 4;\n                JsonValue::Bool(true)\n            }\n            'f' => {\n                self.pos += 5;\n                JsonValue::Bool(false)\n            }\n            'n' => {\n                self.pos += 4;\n                JsonValue::Null\n            }\n            _ => self.parse_number(),\n        }\n    }\n\n    fn parse_array(&mut self) -> JsonValue {\n        self.pos += 1;\n        let mut items = Vec::new();\n        self.skip_whitespace();\n        if self.pos < self.data.len() && self.data[self.pos] == ']' {\n            self.pos += 1;\n            return JsonValue::Array(items);\n        }\n        loop {\n            let val = self.parse_value();\n            items.push(val);\n            self.skip_whitespace();\n            if sel"
+    }
+   ]
+  },
+  {
+   "challenge": "log_parser",
+   "category": "text",
+   "language": "c",
+   "score": 0.5,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 67.1,
+     "finish_reason": "stop",
+     "completion_tokens": 7847,
+     "prompt_tokens": 452,
+     "tok_per_s": 117.0,
+     "reasoning_chars": 18587,
+     "error": "",
+     "stage": "output",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <ctype.h>\n\ntypedef struct { char *name; long count; } NamedCount;\ntypedef struct { char **items; size_t len, cap; } StrList;\n\nstatic void *xrealloc(void *p, size_t n) {\n    void *q = realloc(p, n);\n    if (!q) { fprintf(stderr, \"out of memory\\n\"); exit(1); }\n    return q;\n}\n\nstatic char *xstrdup(const char *s) {\n    size_t n = strlen(s) + 1;\n    char *p = malloc(n);\n    if (!p) { fprintf(stderr, \"out of memory\\n\"); exit(1); }\n    memcpy(p, s, n);\n    return p;\n}\n\nstatic int cmp_named(const void *a, const void *b) {\n    return strcmp(((const NamedCount *)a)->name, ((const NamedCount *)b)->name);\n}\n\nstatic int cmp_str(const void *a, const void *b) {\n    return strcmp(*(char *const *)a, *(char *const *)b);\n}\n\nstatic char *linebuf = NULL;\nstatic size_t linecap = 0;\n\nstatic int read_line(FILE *f) {\n    size_t len = 0;\n    if (linecap == 0) {\n        linecap = 1u << 16;\n        linebuf = malloc(linecap);\n        if (!linebuf) exit(1);\n    }\n    for (;;) {\n        size_t room = linecap - len - 1;\n        if (room == 0) {\n            linecap *= 2;\n            linebuf = xrealloc(linebuf, linecap);\n            room = linecap - len - 1;\n        }\n        if (!fgets(linebuf + len, (int)room + 1, f)) {\n            if (len == 0) return 0;\n            linebuf[len] = '\\0';\n            return 1;\n        }\n        len += strlen(linebuf + len);\n        if (len > 0 && linebuf[len - 1] == '\\n') {\n            linebuf[len] = '\\0';\n            return 1;\n        }\n        if (len == 0) return 0;\n    }\n}\n\nint main(void) {\n    const char *path =\n        \"__FIXTURE_DIR__/app.log\";\n    FILE *f = fopen(path, \"r\");\n    if (!f) {\n        fprintf(stderr, \"cannot open %s\\n\", path);\n        return 1;\n    }\n\n    NamedCount *levels = NULL; size_t nl = 0, capl = 0;\n    NamedCount *comps  = NULL; size_t nc = 0, capc = 0;\n    StrList msgs = { NULL, 0, 0 };\n    long hours[24] = { 0 };\n"
+    },
+    {
+     "n": 2,
+     "seconds": 22.6,
+     "finish_reason": "stop",
+     "completion_tokens": 2681,
+     "prompt_tokens": 2599,
+     "tok_per_s": 118.8,
+     "reasoning_chars": 2301,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <ctype.h>\n\ntypedef struct { char *name; long count; } NamedCount;\ntypedef struct { char **items; size_t len, cap; } StrList;\n\nstatic void *xrealloc(void *p, size_t n) {\n    void *q = realloc(p, n);\n    if (!q) { fprintf(stderr, \"out of memory\\n\"); exit(1); }\n    return q;\n}\n\nstatic char *xstrdup(const char *s) {\n    size_t n = strlen(s) + 1;\n    char *p = malloc(n);\n    if (!p) { fprintf(stderr, \"out of memory\\n\"); exit(1); }\n    memcpy(p, s, n);\n    return p;\n}\n\nstatic int cmp_named(const void *a, const void *b) {\n    return strcmp(((const NamedCount *)a)->name, ((const NamedCount *)b)->name);\n}\n\nstatic int cmp_str(const void *a, const void *b) {\n    return strcmp(*(char *const *)a, *(char *const *)b);\n}\n\nstatic char *linebuf = NULL;\nstatic size_t linecap = 0;\n\nstatic int read_line(FILE *f) {\n    size_t len = 0;\n    if (linecap == 0) {\n        linecap = 1u << 16;\n        linebuf = malloc(linecap);\n        if (!linebuf) exit(1);\n    }\n    for (;;) {\n        size_t room = linecap - len - 1;\n        if (room == 0) {\n            linecap *= 2;\n            linebuf = xrealloc(linebuf, linecap);\n            room = linecap - len - 1;\n        }\n        if (!fgets(linebuf + len, (int)room + 1, f)) {\n            if (len == 0) return 0;\n            linebuf[len] = '\\0';\n            return 1;\n        }\n        len += strlen(linebuf + len);\n        if (len > 0 && linebuf[len - 1] == '\\n') {\n            linebuf[len] = '\\0';\n            return 1;\n        }\n        if (len == 0) return 0;\n    }\n}\n\nint main(void) {\n    const char *path =\n        \"__FIXTURE_DIR__/app.log\";\n    FILE *f = fopen(path, \"r\");\n    if (!f) {\n        fprintf(stderr, \"cannot open %s\\n\", path);\n        return 1;\n    }\n\n    NamedCount *levels = NULL; size_t nl = 0, capl = 0;\n    NamedCount *comps  = NULL; size_t nc = 0, capc = 0;\n    StrList msgs = { NULL, 0, 0 };\n    long hours[24] = { 0 };\n"
+    }
+   ]
+  },
+  {
+   "challenge": "dijkstra_graph",
+   "category": "algo",
+   "language": "swift",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 15.1,
+     "finish_reason": "stop",
+     "completion_tokens": 1556,
+     "prompt_tokens": 389,
+     "tok_per_s": 103.1,
+     "reasoning_chars": 3970,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import Foundation\n\nlet filePath = \"__FIXTURE_DIR__/graph.json\"\n\nlet data = try! Data(contentsOf: URL(fileURLWithPath: filePath))\nlet json = try! JSONSerialization.jsonObject(with: data) as! [String: Any]\n\nlet nodes = json[\"nodes\"] as! [String]\nlet edges = json[\"edges\"] as! [[String: Any]]\n\nvar adjacency: [String: [(String, Int)]] = [:]\nfor node in nodes {\n    adjacency[node] = []\n}\nfor edge in edges {\n    let from = edge[\"from\"] as! String\n    let to = edge[\"to\"] as! String\n    let weight = (edge[\"weight\"] as! NSNumber).intValue\n    adjacency[from]?.append((to, weight))\n    adjacency[to]?.append((from, weight))\n}\n\nvar dist: [String: Int] = [:]\nvar visited: Set<String> = []\nfor node in nodes {\n    dist[node] = Int.max\n}\ndist[\"A\"] = 0\n\nwhile true {\n    var current: String? = nil\n    var minDist = Int.max\n    for node in nodes {\n        if !visited.contains(node) && dist[node]! < minDist {\n            minDist = dist[node]!\n            current = node\n        }\n    }\n    guard let c = current else { break }\n    visited.insert(c)\n    if let neighbors = adjacency[c] {\n        for (neighbor, weight) in neighbors {\n            if !visited.contains(neighbor) {\n                let newDist = dist[c]! + weight\n                if newDist < dist[neighbor]! {\n                    dist[neighbor] = newDist\n                }\n            }\n        }\n    }\n}\n\nprint(\"=== Shortest Paths from A ===\")\nprint(\"\")\nlet sortedNodes = nodes.sorted()\nfor node in sortedNodes {\n    print(\"A -> \\(node): \\(dist[node]!)\")\n}"
+    }
+   ]
+  },
+  {
+   "challenge": "dijkstra_graph",
+   "category": "algo",
+   "language": "java",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 35.1,
+     "finish_reason": "stop",
+     "completion_tokens": 3992,
+     "prompt_tokens": 393,
+     "tok_per_s": 113.7,
+     "reasoning_chars": 9321,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import java.io.*;\nimport java.nio.file.*;\nimport java.util.*;\n\npublic class Main {\n    static String src;\n    static int pos;\n\n    static class State implements Comparable<State> {\n        String node;\n        double d;\n        State(String n, double d) { this.node = n; this.d = d; }\n        public int compareTo(State o) { return Double.compare(this.d, o.d); }\n    }\n\n    static void skipWs() {\n        while (pos < src.length() && Character.isWhitespace(src.charAt(pos))) pos++;\n    }\n\n    static Object parseValue() {\n        skipWs();\n        char c = src.charAt(pos);\n        if (c == '{') return parseObject();\n        if (c == '[') return parseArray();\n        if (c == '\"') return parseString();\n        return parseNumber();\n    }\n\n    @SuppressWarnings(\"unchecked\")\n    static Map<String, Object> parseObject() {\n        Map<String, Object> m = new LinkedHashMap<>();\n        pos++; // {\n        skipWs();\n        if (pos < src.length() && src.charAt(pos) == '}') { pos++; return m; }\n        while (true) {\n            skipWs();\n            String key = parseString();\n            skipWs();\n            pos++; // :\n            Object v = parseValue();\n            m.put(key, v);\n            skipWs();\n            char c = src.charAt(pos);\n            if (c == ',') { pos++; continue; }\n            else if (c == '}') { pos++; break; }\n            else throw new RuntimeException(\"bad object at \" + pos);\n        }\n        return m;\n    }\n\n    static List<Object> parseArray() {\n        List<Object> l = new ArrayList<>();\n        pos++; // [\n        skipWs();\n        if (pos < src.length() && src.charAt(pos) == ']') { pos++; return l; }\n        while (true) {\n            l.add(parseValue());\n            skipWs();\n            char c = src.charAt(pos);\n            if (c == ',') { pos++; continue; }\n            else if (c == ']') { pos++; break; }\n            else throw new RuntimeException(\"bad array at \" + pos);\n        }\n        return l;\n    }\n\n    static String parseString() {\n"
+    }
+   ]
+  },
+  {
+   "challenge": "dijkstra_graph",
+   "category": "algo",
+   "language": "typescript",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 12.6,
+     "finish_reason": "stop",
+     "completion_tokens": 1776,
+     "prompt_tokens": 357,
+     "tok_per_s": 140.9,
+     "reasoning_chars": 3875,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import * as fs from 'fs';\n\ninterface Edge {\n    from: string;\n    to: string;\n    weight: number;\n}\n\ninterface Graph {\n    nodes: string[];\n    edges: Edge[];\n}\n\nfunction main(): void {\n    const filePath = '__FIXTURE_DIR__/graph.json';\n    const data: string = fs.readFileSync(filePath, 'utf-8');\n    const graph: Graph = JSON.parse(data);\n\n    // Build adjacency list (undirected)\n    const adj = new Map<string, { to: string; weight: number }[]>();\n    const allNodes = new Set<string>(graph.nodes);\n\n    for (const node of graph.nodes) {\n        adj.set(node, []);\n    }\n    for (const edge of graph.edges) {\n        if (!adj.has(edge.from)) {\n            adj.set(edge.from, []);\n            allNodes.add(edge.from);\n        }\n        if (!adj.has(edge.to)) {\n            adj.set(edge.to, []);\n            allNodes.add(edge.to);\n        }\n        adj.get(edge.from)!.push({ to: edge.to, weight: edge.weight });\n        adj.get(edge.to)!.push({ to: edge.from, weight: edge.weight });\n    }\n\n    // Dijkstra's algorithm from node \"A\"\n    const dist = new Map<string, number>();\n    const visited = new Set<string>();\n\n    for (const node of allNodes) {\n        dist.set(node, Infinity);\n    }\n    dist.set('A', 0);\n\n    const unvisited = new Set<string>(allNodes);\n\n    while (unvisited.size > 0) {\n        // Find unvisited node with minimum distance\n        let minNode: string | null = null;\n        let minDist = Infinity;\n        for (const node of unvisited) {\n            const d = dist.get(node)!;\n            if (d < minDist) {\n                minDist = d;\n                minNode = node;\n            }\n        }\n\n        if (minNode === null || minDist === Infinity) {\n            break;\n        }\n\n        unvisited.delete(minNode);\n        visited.add(minNode);\n\n        // Relax all edges from minNode\n        const neighbors = adj.get(minNode)!;\n        for (const { to, weight } of neighbors) {\n            if (unvisited.has(to)"
+    }
+   ]
+  },
+  {
+   "challenge": "file_tree_analysis",
+   "category": "files",
+   "language": "python",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 20.5,
+     "finish_reason": "stop",
+     "completion_tokens": 2730,
+     "prompt_tokens": 422,
+     "tok_per_s": 133.5,
+     "reasoning_chars": 8358,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import os\n\nbase_dir = \"__FIXTURE_DIR__/project_tree\"\n\ngroups = {}\n\nfor dirpath, dirnames, filenames in os.walk(base_dir, followlinks=False):\n    for filename in filenames:\n        filepath = os.path.join(dirpath, filename)\n        if os.path.islink(filepath):\n            continue\n        relpath = os.path.relpath(filepath, base_dir).replace(os.sep, '/')\n\n        try:\n            with open(filepath, 'rb') as f:\n                content = f.read()\n            lines = content.count(b'\\n')\n            if content and not content.endswith(b'\\n'):\n                lines += 1\n        except (IOError, OSError):\n            lines = 0\n\n        try:\n            chars = os.path.getsize(filepath)\n        except (IOError, OSError):\n            chars = 0\n\n        ext = os.path.splitext(filename)[1]\n\n        if ext not in groups:\n            groups[ext] = []\n        groups[ext].append((relpath, lines, chars))\n\nsorted_exts = sorted(groups.keys())\n\nout = []\nout.append(\"=== File Tree Analysis ===\")\nout.append(\"\")\n\ntotal_files = 0\ntotal_lines = 0\ntotal_chars = 0\n\nfor ext in sorted_exts:\n    files = sorted(groups[ext], key=lambda x: x[0])\n    n_files = len(files)\n    n_lines = sum(f[1] for f in files)\n    n_chars = sum(f[2] for f in files)\n\n    total_files += n_files\n    total_lines += n_lines\n    total_chars += n_chars\n\n    out.append(f\"Extension: {ext}\")\n    out.append(f\"  Files: {n_files}\")\n    out.append(f\"  Total Lines: {n_lines}\")\n    out.append(f\"  Total Characters: {n_chars}\")\n    for relpath, lines, chars in files:\n        out.append(f\"    {relpath}: {lines} lines, {chars} chars\")\n\nout.append(\"\")\nout.append(f\"Total: {total_files} files, {total_lines} lines, {total_chars} characters\")\n\nprint('\\n'.join(out))"
+    }
+   ]
+  },
+  {
+   "challenge": "dijkstra_graph",
+   "category": "algo",
+   "language": "rust",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 30.7,
+     "finish_reason": "stop",
+     "completion_tokens": 3983,
+     "prompt_tokens": 415,
+     "tok_per_s": 129.5,
+     "reasoning_chars": 6336,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "use std::fs;\nuse std::collections::HashMap;\n\nfn skip_ws(s: &str, pos: &mut usize) {\n    while *pos < s.len() && s.as_bytes()[*pos].is_ascii_whitespace() {\n        *pos += 1;\n    }\n}\n\nfn parse_string(s: &str, pos: &mut usize) -> String {\n    *pos += 1; // skip opening quote\n    let mut result = String::new();\n    while *pos < s.len() {\n        let c = s.as_bytes()[*pos];\n        if c == b'\\\\' {\n            *pos += 1;\n            let esc = s.as_bytes()[*pos];\n            match esc {\n                b'\"' => result.push('\"'),\n                b'\\\\' => result.push('\\\\'),\n                b'/' => result.push('/'),\n                b'n' => result.push('\\n'),\n                b't' => result.push('\\t'),\n                b'r' => result.push('\\r'),\n                b'b' => result.push('\\u{0008}'),\n                b'f' => result.push('\\u{000C}'),\n                b'u' => {\n                    let hex = &s[*pos + 1..*pos + 5];\n                    let code = u32::from_str_radix(hex, 16).unwrap();\n                    result.push(char::from_u32(code).unwrap_or('\\u{FFFD}'));\n                    *pos += 4;\n                }\n                _ => result.push(esc as char),\n            }\n            *pos += 1;\n        } else if c == b'\"' {\n            *pos += 1;\n            break;\n        } else {\n            result.push(c as char);\n            *pos += 1;\n        }\n    }\n    result\n}\n\nfn parse_number(s: &str, pos: &mut usize) -> f64 {\n    let start = *pos;\n    while *pos < s.len() {\n        let c = s.as_bytes()[*pos];\n        if c.is_ascii_digit() || c == b'-' || c == b'+' || c == b'.' || c == b'e' || c == b'E' {\n            *pos += 1;\n        } else {\n            break;\n        }\n    }\n    s[start..*pos].parse::<f64>().unwrap()\n}\n\n// Returns (key, value) pairs for an object, or (items) for an array\nenum Json {\n    String(String),\n    Number(f64),\n    Array(Vec<Json>),\n    Object(Vec<(String, Json)>),\n    Null,\n    Bool(bool),\n}\n\nfn parse_json(s: &str, pos: &mut usize) -> Json {\n    skip_ws(s, "
+    }
+   ]
+  },
+  {
+   "challenge": "dijkstra_graph",
+   "category": "algo",
+   "language": "c",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 64.0,
+     "finish_reason": "stop",
+     "completion_tokens": 8643,
+     "prompt_tokens": 444,
+     "tok_per_s": 135.0,
+     "reasoning_chars": 19344,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <float.h>\n\n#define MAX_NAME 256\n\ntypedef struct {\n    const char *s;\n    int pos;\n} Parser;\n\nstatic void skip_ws(Parser *p) {\n    while (p->s[p->pos] == ' ' || p->s[p->pos] == '\\t' ||\n           p->s[p->pos] == '\\n' || p->s[p->pos] == '\\r')\n        p->pos++;\n}\n\nstatic int expect(Parser *p, char c) {\n    skip_ws(p);\n    if (p->s[p->pos] != c) return 0;\n    p->pos++;\n    return 1;\n}\n\nstatic void parse_string(Parser *p, char *out, int max) {\n    skip_ws(p);\n    if (p->s[p->pos] != '\"') { out[0] = '\\0'; return; }\n    p->pos++;\n    int i = 0;\n    while (p->s[p->pos] != '\"' && p->s[p->pos] != '\\0' && i < max - 1) {\n        if (p->s[p->pos] == '\\\\' && p->s[p->pos + 1]) {\n            p->pos++;\n            out[i++] = p->s[p->pos];\n        } else {\n            out[i++] = p->s[p->pos];\n        }\n        p->pos++;\n    }\n    out[i] = '\\0';\n    if (p->s[p->pos] == '\"') p->pos++;\n}\n\nstatic double parse_number(Parser *p) {\n    skip_ws(p);\n    char tmp[64];\n    int i = 0;\n    while (p->s[p->pos] && p->s[p->pos] != ',' && p->s[p->pos] != '}' &&\n           p->s[p->pos] != ']' && p->s[p->pos] != ' ' &&\n           p->s[p->pos] != '\\n' && p->s[p->pos] != '\\r' &&\n           p->s[p->pos] != '\\t' && i < 63) {\n        tmp[i++] = p->s[p->pos];\n        p->pos++;\n    }\n    tmp[i] = '\\0';\n    return atof(tmp);\n}\n\nstatic int find_node(char **nodes, int n, const char *name) {\n    for (int i = 0; i < n; i++)\n        if (strcmp(nodes[i], name) == 0) return i;\n    return -1;\n}\n\nint main(void) {\n    const char *path =\n        \"__FIXTURE_DIR__/graph.json\";\n    FILE *f = fopen(path, \"r\");\n    if (!f) {\n        fprintf(stderr, \"Cannot open %s\\n\", path);\n        return 1;\n    }\n\n    fseek(f, 0, SEEK_END);\n    long len = ftell(f);\n    fseek(f, 0, SEEK_SET);\n\n    char *buf = malloc((size_t)len + 1);\n    if (!buf) { fclose(f); return 1; }\n    if (fread(buf, 1, (size_t)len, f) != (size_t)"
+    }
+   ]
+  },
+  {
+   "challenge": "file_tree_analysis",
+   "category": "files",
+   "language": "java",
+   "score": 0.5,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 34.7,
+     "finish_reason": "stop",
+     "completion_tokens": 4117,
+     "prompt_tokens": 458,
+     "tok_per_s": 118.5,
+     "reasoning_chars": 13255,
+     "error": "",
+     "stage": "build",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "import java.io.IOException;\nimport java.nio.file.*;\nimport java.nio.file.attribute.BasicFileAttributes;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Path root = Paths.get(\"__FIXTURE_DIR__/project_tree\");\n\n        Map<String, List<String[]>> extMap = new TreeMap<>();\n        int totalFiles = 0;\n        long totalLines = 0;\n        long totalChars = 0;\n\n        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {\n            @Override\n            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {\n                if (Files.isSymbolicLink(dir)) {\n                    return FileVisitResult.SKIP_SUBTREE;\n                }\n                return FileVisitResult.CONTINUE;\n            }\n\n            @Override\n            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {\n                if (Files.isSymbolicLink(file)) {\n                    return FileVisitResult.CONTINUE;\n                }\n\n                Path rel = root.relativize(file);\n                String relStr = rel.toString().replace('\\\\', '/');\n\n                String fileName = file.getFileName().toString();\n                String ext = getExtension(fileName);\n\n                byte[] bytes;\n                try {\n                    bytes = Files.readAllBytes(file);\n                } catch (IOException e) {\n                    return FileVisitResult.CONTINUE;\n                }\n\n                int chars = bytes.length;\n                int lines = countLines(bytes);\n\n                totalFiles++;\n                totalLines += lines;\n                totalChars += chars;\n\n                extMap.computeIfAbsent(ext, k -> new ArrayList<>())\n                       .add(new String[]{relStr, String.valueOf(lines), String.valueOf(chars)});\n\n                return FileVisitResult.CONTINUE;\n            }\n        });\n\n        for (List<String[]> list : "
+    },
+    {
+     "n": 2,
+     "seconds": 8.0,
+     "finish_reason": "stop",
+     "completion_tokens": 1109,
+     "prompt_tokens": 1585,
+     "tok_per_s": 138.6,
+     "reasoning_chars": 743,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import java.io.IOException;\nimport java.nio.file.*;\nimport java.nio.file.attribute.BasicFileAttributes;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Path root = Paths.get(\"__FIXTURE_DIR__/project_tree\");\n\n        Map<String, List<String[]>> extMap = new TreeMap<>();\n        int[] totalFiles = {0};\n        long[] totalLines = {0};\n        long[] totalChars = {0};\n\n        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {\n            @Override\n            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {\n                if (Files.isSymbolicLink(dir)) {\n                    return FileVisitResult.SKIP_SUBTREE;\n                }\n                return FileVisitResult.CONTINUE;\n            }\n\n            @Override\n            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {\n                if (Files.isSymbolicLink(file)) {\n                    return FileVisitResult.CONTINUE;\n                }\n\n                Path rel = root.relativize(file);\n                String relStr = rel.toString().replace('\\\\', '/');\n\n                String fileName = file.getFileName().toString();\n                String ext = getExtension(fileName);\n\n                byte[] bytes;\n                try {\n                    bytes = Files.readAllBytes(file);\n                } catch (IOException e) {\n                    return FileVisitResult.CONTINUE;\n                }\n\n                int chars = bytes.length;\n                int lines = countLines(bytes);\n\n                totalFiles[0]++;\n                totalLines[0] += lines;\n                totalChars[0] += chars;\n\n                extMap.computeIfAbsent(ext, k -> new ArrayList<>())\n                       .add(new String[]{relStr, String.valueOf(lines), String.valueOf(chars)});\n\n                return FileVisitResult.CONTINUE;\n            }\n        });\n\n        for (L"
+    }
+   ]
+  },
+  {
+   "challenge": "file_tree_analysis",
+   "category": "files",
+   "language": "swift",
+   "score": 0.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 40.6,
+     "finish_reason": "stop",
+     "completion_tokens": 4202,
+     "prompt_tokens": 454,
+     "tok_per_s": 103.5,
+     "reasoning_chars": 13432,
+     "error": "",
+     "stage": "run",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "import Foundation\n\nlet baseDir = \"__FIXTURE_DIR__/project_tree\"\nlet fm = FileManager.default\n\nstruct FileInfo {\n    let relativePath: String\n    let lines: Int\n    let chars: Int\n}\n\nvar filesByExtension: [String: [FileInfo]] = [:]\nvar totalFiles = 0\nvar totalLines = 0\nvar totalChars = 0\nvar visited: Set<String> = []\n\nguard fm.fileExists(atPath: baseDir) else {\n    print(\"=== File Tree Analysis ===\")\n    print(\"\")\n    print(\"Total: 0 files, 0 lines, 0 characters\")\n    exit(0)\n}\n\nlet enumerator = fm.enumerator(atPath: baseDir, options: [], includingPropertiesForKeys: nil)\n\nwhile let path = enumerator.nextObject() as? String {\n    let fullPath = baseDir + \"/\" + path\n\n    var isDir: ObjCBool = false\n    guard fm.fileExists(atPath: fullPath, isDirectory: &isDir) else { continue }\n    if isDir.boolValue { continue }\n\n    let attrs = try? fm.attributesOfItem(atPath: fullPath)\n    if let type = attrs?[.type] as? String, type == \"NSFileTypeSymbolicLink\" {\n        continue\n    }\n\n    guard !visited.contains(fullPath) else { continue }\n    visited.insert(fullPath)\n\n    guard let data = fm.contents(atPath: fullPath) else { continue }\n\n    let charCount = data.count\n\n    let content = String(data: data, encoding: .utf8) ?? \"\"\n    var lineCount = 0\n    if !content.isEmpty {\n        lineCount = content.components(separatedBy: \"\\n\").count\n        if content.hasSuffix(\"\\n\") {\n            lineCount -= 1\n        }\n    }\n\n    let ext = (fullPath as NSString).pathExtension\n    let extKey = ext.isEmpty ? \"\" : \".\" + ext\n\n    let info = FileInfo(relativePath: path, lines: lineCount, chars: charCount)\n\n    if filesByExtension[extKey] == nil {\n        filesByExtension[extKey] = []\n    }\n    filesByExtension[extKey]!.append(info)\n\n    totalFiles += 1\n    totalLines += lineCount\n    totalChars += charCount\n}\n\nprint(\"=== File Tree Analysis ===\")\nprint(\"\")\n\nlet sortedExtensions = filesByExtension.keys.sorted()\n\nfor ext in sortedExtensions {\n"
+    },
+    {
+     "n": 2,
+     "seconds": 18.9,
+     "finish_reason": "stop",
+     "completion_tokens": 2355,
+     "prompt_tokens": 1826,
+     "tok_per_s": 124.8,
+     "reasoning_chars": 5785,
+     "error": "",
+     "stage": "run",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "import Foundation\n\nlet baseDir = \"__FIXTURE_DIR__/project_tree\"\nlet fm = FileManager.default\n\nstruct FileInfo {\n    let relativePath: String\n    let lines: Int\n    let chars: Int\n}\n\nvar filesByExtension: [String: [FileInfo]] = [:]\nvar totalFiles = 0\nvar totalLines = 0\nvar totalChars = 0\nvar visited: Set<String> = []\n\nguard fm.fileExists(atPath: baseDir) else {\n    print(\"=== File Tree Analysis ===\")\n    print(\"\")\n    print(\"Total: 0 files, 0 lines, 0 characters\")\n    exit(0)\n}\n\nlet baseURL = URL(fileURLWithPath: baseDir)\nlet enumerator = fm.enumerator(at: baseURL, includingPropertiesForKeys: nil, options: [])\n\nwhile let url = enumerator.nextObject() as? URL {\n    let fullPath = url.path\n\n    var isDir: ObjCBool = false\n    guard fm.fileExists(atPath: fullPath, isDirectory: &isDir) else { continue }\n    if isDir.boolValue { continue }\n\n    let resourceValues = try? url.resourceValues(forKeys: [.isSymbolicLinkKey])\n    if let isSymlink = resourceValues?.isSymbolicLink, isSymlink {\n        continue\n    }\n\n    guard !visited.contains(fullPath) else { continue }\n    visited.insert(fullPath)\n\n    guard let data = fm.contents(atPath: fullPath) else { continue }\n\n    let charCount = data.count\n\n    let content = String(data: data, encoding: .utf8) ?? \"\"\n    var lineCount = 0\n    if !content.isEmpty {\n        lineCount = content.components(separatedBy: \"\\n\").count\n        if content.hasSuffix(\"\\n\") {\n            lineCount -= 1\n        }\n    }\n\n    let relativePath = fullPath.replacingOccurrences(of: baseDir + \"/\", with: \"\")\n\n    let ext = url.pathExtension\n    let extKey = ext.isEmpty ? \"\" : \".\" + ext\n\n    let info = FileInfo(relativePath: relativePath, lines: lineCount, chars: charCount)\n\n    if filesByExtension[extKey] == nil {\n        filesByExtension[extKey] = []\n    }\n    filesByExtension[extKey]!.append(info)\n\n    totalFiles += 1\n    totalLines += lineCount\n    totalChars += charCount\n}\n\nprint(\"=== File Tree Analys"
+    }
+   ]
+  },
+  {
+   "challenge": "file_tree_analysis",
+   "category": "files",
+   "language": "typescript",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 32.6,
+     "finish_reason": "stop",
+     "completion_tokens": 3746,
+     "prompt_tokens": 422,
+     "tok_per_s": 114.9,
+     "reasoning_chars": 10359,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import * as fs from 'fs';\nimport * as path from 'path';\n\nconst ROOT = '__FIXTURE_DIR__/project_tree';\n\ninterface FileInfo {\n  relPath: string;\n  lines: number;\n  chars: number;\n}\n\ntype ExtensionMap = Map<string, FileInfo[]>;\n\nfunction walk(dir: string, root: string, visited: Set<string>, result: ExtensionMap): void {\n  let entries: fs.Dirent[];\n  try {\n    entries = fs.readdirSync(dir, { withFileTypes: true });\n  } catch {\n    return;\n  }\n\n  for (const entry of entries) {\n    const fullPath = path.join(dir, entry.name);\n\n    let stats: fs.Stats;\n    try {\n      stats = fs.lstatSync(fullPath);\n    } catch {\n      continue;\n    }\n\n    if (stats.isSymbolicLink()) {\n      continue;\n    }\n\n    if (stats.isDirectory()) {\n      let resolved: string;\n      try {\n        resolved = fs.realpathSync(fullPath);\n      } catch {\n        continue;\n      }\n      if (visited.has(resolved)) continue;\n      visited.add(resolved);\n      walk(fullPath, root, visited, result);\n    } else if (stats.isFile()) {\n      const relPath = path.relative(root, fullPath).split(path.sep).join('/');\n      const content = fs.readFileSync(fullPath, 'utf-8');\n      let lines: number;\n      if (content.length === 0) {\n        lines = 0;\n      } else {\n        lines = content.split('\\n').length;\n        if (content.endsWith('\\n')) lines--;\n      }\n      const chars = stats.size;\n      const ext = path.extname(entry.name);\n\n      if (!result.has(ext)) {\n        result.set(ext, []);\n      }\n      result.get(ext)!.push({ relPath, lines, chars });\n    }\n  }\n}\n\nconst result: ExtensionMap = new Map();\nconst visited = new Set<string>();\nvisited.add(fs.realpathSync(ROOT));\nwalk(ROOT, ROOT, visited, result);\n\nconst extensions = [...result.keys()].sort();\n\nfor (const ext of extensions) {\n  result.get(ext)!.sort((a, b) => a.relPath < b.relPath ? -1 : a.relPath > b.relPath ? 1 : 0);\n}\n\nlet output = '=== File Tree Analysis ===\\n\\n';\n\nlet totalFiles = 0;\nlet totalL"
+    }
+   ]
+  },
+  {
+   "challenge": "system_info",
+   "category": "os",
+   "language": "python",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 3.2,
+     "finish_reason": "stop",
+     "completion_tokens": 413,
+     "prompt_tokens": 277,
+     "tok_per_s": 127.1,
+     "reasoning_chars": 1194,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import subprocess\nimport json\n\ndef run_cmd(cmd):\n    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)\n    return result.stdout.strip()\n\ndata = {\n    \"hostname\": run_cmd(\"hostname\"),\n    \"os\": run_cmd(\"uname -s\"),\n    \"architecture\": run_cmd(\"uname -m\"),\n    \"username\": run_cmd(\"whoami\")\n}\n\nprint(json.dumps(data, indent=2))"
+    }
+   ]
+  },
+  {
+   "challenge": "http_client",
+   "category": "api",
+   "language": "c",
+   "score": 0.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 40.4,
+     "finish_reason": "stop",
+     "completion_tokens": 5166,
+     "prompt_tokens": 437,
+     "tok_per_s": 127.9,
+     "reasoning_chars": 5093,
+     "error": "",
+     "stage": "output",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <math.h>\n#include <sys/socket.h>\n#include <netinet/in.h>\n#include <arpa/inet.h>\n#include <unistd.h>\n\ntypedef struct {\n    int id;\n    char *name;\n    double price;\n    char *category;\n    int stock;\n} Product;\n\ntypedef struct {\n    Product *items;\n    int count;\n    int capacity;\n} ProductArray;\n\nstatic int cmp_product(const void *a, const void *b) {\n    const Product *pa = (const Product *)a;\n    const Product *pb = (const Product *)b;\n    return strcmp(pa->name, pb->name);\n}\n\n/* ---- Simple JSON parser ---- */\n\ntypedef struct {\n    const char *s;\n    size_t pos;\n    size_t len;\n} JParser;\n\nstatic void jskip_ws(JParser *p) {\n    while (p->pos < p->len) {\n        char c = p->s[p->pos];\n        if (c == ' ' || c == '\\t' || c == '\\n' || c == '\\r') p->pos++;\n        else break;\n    }\n}\n\nstatic int jexpect(JParser *p, char c) {\n    jskip_ws(p);\n    if (p->pos < p->len && p->s[p->pos] == c) {\n        p->pos++;\n        return 1;\n    }\n    return 0;\n}\n\nstatic char *jparse_string(JParser *p) {\n    jskip_ws(p);\n    if (p->pos >= p->len || p->s[p->pos] != '\"') return NULL;\n    p->pos++; /* opening quote */\n    size_t cap = 256;\n    char *buf = (char *)malloc(cap);\n    if (!buf) return NULL;\n    size_t n = 0;\n    while (p->pos < p->len && p->s[p->pos] != '\"') {\n        char c = p->s[p->pos];\n        if (c == '\\\\' && p->pos + 1 < p->len) {\n            p->pos++;\n            char e = p->s[p->pos];\n            switch (e) {\n                case '\"': c = '\"'; break;\n                case '\\\\': c = '\\\\'; break;\n                case '/': c = '/'; break;\n                case 'n': c = '\\n'; break;\n                case 't': c = '\\t'; break;\n                case 'r': c = '\\r'; break;\n                case 'b': c = '\\b'; break;\n                case 'f': c = '\\f'; break;\n                case 'u': {\n                    /* skip 4 hex digits, encode as '?' for simplicity */\n                    if (p->pos + 4 < p->len) {\n        "
+    },
+    {
+     "n": 2,
+     "seconds": 116.4,
+     "finish_reason": "stop",
+     "completion_tokens": 13257,
+     "prompt_tokens": 4261,
+     "tok_per_s": 113.9,
+     "reasoning_chars": 29329,
+     "error": "",
+     "stage": "run",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <strings.h>\n#include <math.h>\n#include <sys/socket.h>\n#include <netinet/in.h>\n#include <arpa/inet.h>\n#include <unistd.h>\n\ntypedef struct {\n    int id;\n    char *name;\n    double price;\n    char *category;\n    int stock;\n} Product;\n\ntypedef struct {\n    Product *items;\n    int count;\n    int capacity;\n} ProductArray;\n\nstatic int cmp_product(const void *a, const void *b) {\n    const Product *pa = (const Product *)a;\n    const Product *pb = (const Product *)b;\n    return strcmp(pa->name, pb->name);\n}\n\n/* ---- Simple JSON parser ---- */\n\ntypedef struct {\n    const char *s;\n    size_t pos;\n    size_t len;\n} JParser;\n\nstatic void jskip_ws(JParser *p) {\n    while (p->pos < p->len) {\n        char c = p->s[p->pos];\n        if (c == ' ' || c == '\\t' || c == '\\n' || c == '\\r') p->pos++;\n        else break;\n    }\n}\n\nstatic int jexpect(JParser *p, char c) {\n    jskip_ws(p);\n    if (p->pos < p->len && p->s[p->pos] == c) {\n        p->pos++;\n        return 1;\n    }\n    return 0;\n}\n\nstatic char *jparse_string(JParser *p) {\n    jskip_ws(p);\n    if (p->pos >= p->len || p->s[p->pos] != '\"') return NULL;\n    p->pos++;\n    size_t cap = 256;\n    char *buf = (char *)malloc(cap);\n    if (!buf) return NULL;\n    size_t n = 0;\n    while (p->pos < p->len && p->s[p->pos] != '\"') {\n        char c = p->s[p->pos];\n        if (c == '\\\\' && p->pos + 1 < p->len) {\n            p->pos++;\n            char e = p->s[p->pos];\n            switch (e) {\n                case '\"': c = '\"'; break;\n                case '\\\\': c = '\\\\'; break;\n                case '/': c = '/'; break;\n                case 'n': c = '\\n'; break;\n                case 't': c = '\\t'; break;\n                case 'r': c = '\\r'; break;\n                case 'b': c = '\\b'; break;\n                case 'f': c = '\\f'; break;\n                case 'u': {\n                    if (p->pos + 4 < p->len) p->pos += 4;\n                    c = '?';\n                    break;\n              "
+    }
+   ]
+  },
+  {
+   "challenge": "system_info",
+   "category": "os",
+   "language": "java",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 13.3,
+     "finish_reason": "stop",
+     "completion_tokens": 1559,
+     "prompt_tokens": 313,
+     "tok_per_s": 117.5,
+     "reasoning_chars": 5234,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import java.io.BufferedReader;\nimport java.io.InputStreamReader;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        String hostname = runCommand(\"hostname\");\n        String os = runCommand(\"uname -s\");\n        String architecture = runCommand(\"uname -m\");\n        String username = runCommand(\"whoami\");\n\n        String json = \"{\\n\"\n                + \"  \\\"hostname\\\": \\\"\" + hostname + \"\\\",\\n\"\n                + \"  \\\"os\\\": \\\"\" + os + \"\\\",\\n\"\n                + \"  \\\"architecture\\\": \\\"\" + architecture + \"\\\",\\n\"\n                + \"  \\\"username\\\": \\\"\" + username + \"\\\"\\n\"\n                + \"}\";\n\n        System.out.println(json);\n    }\n\n    private static String runCommand(String command) throws Exception {\n        Process process = Runtime.getRuntime().exec(command);\n\n        Thread stderrDrain = new Thread(() -> {\n            try (BufferedReader err = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {\n                while (err.readLine() != null) {\n                }\n            } catch (Exception ignored) {\n            }\n        });\n        stderrDrain.start();\n\n        StringBuilder sb = new StringBuilder();\n        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {\n            String line;\n            while ((line = reader.readLine()) != null) {\n                if (sb.length() > 0) {\n                    sb.append('\\n');\n                }\n                sb.append(line);\n            }\n        }\n\n        process.waitFor();\n        stderrDrain.join();\n\n        return sb.toString().trim();\n    }\n}"
+    }
+   ]
+  },
+  {
+   "challenge": "system_info",
+   "category": "os",
+   "language": "swift",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 10.0,
+     "finish_reason": "stop",
+     "completion_tokens": 1327,
+     "prompt_tokens": 309,
+     "tok_per_s": 132.1,
+     "reasoning_chars": 3990,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import Foundation\n\nfunc runCommand(_ cmd: String) -> String {\n    let process = Process()\n    process.executableURL = URL(fileURLWithPath: \"/bin/sh\")\n    process.arguments = [\"-c\", cmd]\n    let pipe = Pipe()\n    process.standardOutput = pipe\n    process.standardError = FileHandle.nullDevice\n    try? process.run()\n    process.waitUntilExit()\n    let data = pipe.fileHandleForReading.readDataToEndOfFile()\n    let output = String(data: data, encoding: .utf8) ?? \"\"\n    return output.trimmingCharacters(in: .whitespacesAndNewlines)\n}\n\nfunc escape(_ s: String) -> String {\n    var result = s\n    result = result.replacingOccurrences(of: \"\\\\\", with: \"\\\\\\\\\")\n    result = result.replacingOccurrences(of: \"\\\"\", with: \"\\\\\\\"\")\n    return result\n}\n\nlet hostname = runCommand(\"hostname\")\nlet os = runCommand(\"uname -s\")\nlet architecture = runCommand(\"uname -m\")\nlet username = runCommand(\"whoami\")\n\nlet json = \"{\\n  \\\"hostname\\\": \\\"\\(escape(hostname))\\\",\\n  \\\"os\\\": \\\"\\(escape(os))\\\",\\n  \\\"architecture\\\": \\\"\\(escape(architecture))\\\",\\n  \\\"username\\\": \\\"\\(escape(username))\\\"\\n}\"\n\nprint(json)"
+    }
+   ]
+  },
+  {
+   "challenge": "system_info",
+   "category": "os",
+   "language": "c",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 8.5,
+     "finish_reason": "stop",
+     "completion_tokens": 1199,
+     "prompt_tokens": 364,
+     "tok_per_s": 140.4,
+     "reasoning_chars": 2041,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\nstatic char *run_cmd(const char *cmd)\n{\n    FILE *fp = popen(cmd, \"r\");\n    if (!fp)\n        return NULL;\n\n    size_t cap = 4096;\n    char *buf = (char *)malloc(cap);\n    if (!buf) {\n        pclose(fp);\n        return NULL;\n    }\n    buf[0] = '\\0';\n\n    size_t total = 0;\n    while (fgets(buf + total, (int)(cap - total), fp)) {\n        size_t len = strlen(buf + total);\n        total += len;\n        if (total >= cap - 1) {\n            cap *= 2;\n            char *nb = (char *)realloc(buf, cap);\n            if (!nb) {\n                free(buf);\n                pclose(fp);\n                return NULL;\n            }\n            buf = nb;\n        }\n    }\n\n    pclose(fp);\n\n    while (total > 0 &&\n           (buf[total - 1] == '\\n' || buf[total - 1] == '\\r' ||\n            buf[total - 1] == ' '  || buf[total - 1] == '\\t')) {\n        buf[--total] = '\\0';\n    }\n\n    return buf;\n}\n\nint main(void)\n{\n    char *hostname     = run_cmd(\"hostname\");\n    char *os          = run_cmd(\"uname -s\");\n    char *architecture = run_cmd(\"uname -m\");\n    char *username    = run_cmd(\"whoami\");\n\n    if (!hostname)     hostname     = (char *)malloc(1); if (!hostname) return 1;\n    if (!os)           os           = (char *)malloc(1); if (!os) return 1;\n    if (!architecture) architecture = (char *)malloc(1); if (!architecture) return 1;\n    if (!username)     username     = (char *)malloc(1); if (!username) return 1;\n\n    printf(\"{\\n\");\n    printf(\"  \\\"hostname\\\": \\\"%s\\\",\\n\", hostname);\n    printf(\"  \\\"os\\\": \\\"%s\\\",\\n\", os);\n    printf(\"  \\\"architecture\\\": \\\"%s\\\",\\n\", architecture);\n    printf(\"  \\\"username\\\": \\\"%s\\\"\\n\", username);\n    printf(\"}\\n\");\n\n    free(hostname);\n    free(os);\n    free(architecture);\n    free(username);\n\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "challenge": "system_info",
+   "category": "os",
+   "language": "typescript",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 11.1,
+     "finish_reason": "stop",
+     "completion_tokens": 1269,
+     "prompt_tokens": 277,
+     "tok_per_s": 114.5,
+     "reasoning_chars": 4724,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import { execSync } from \"child_process\";\n\nconst hostname = execSync(\"hostname\").toString().trim();\nconst os = execSync(\"uname -s\").toString().trim();\nconst architecture = execSync(\"uname -m\").toString().trim();\nconst username = execSync(\"whoami\").toString().trim();\n\nconst result: { hostname: string; os: string; architecture: string; username: string } = {\n  hostname,\n  os,\n  architecture,\n  username,\n};\n\nconsole.log(JSON.stringify(result, null, 2));"
+    }
+   ]
+  },
+  {
+   "challenge": "system_info",
+   "category": "os",
+   "language": "rust",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 9.3,
+     "finish_reason": "stop",
+     "completion_tokens": 1076,
+     "prompt_tokens": 335,
+     "tok_per_s": 115.6,
+     "reasoning_chars": 3075,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "use std::process::Command;\n\nfn run_cmd(cmd: &str, arg: &str) -> String {\n    let output = Command::new(cmd)\n        .arg(arg)\n        .output()\n        .expect(\"failed to execute command\");\n    String::from_utf8_lossy(&output.stdout).trim().to_string()\n}\n\nfn run_cmd_no_arg(cmd: &str) -> String {\n    let output = Command::new(cmd)\n        .output()\n        .expect(\"failed to execute command\");\n    String::from_utf8_lossy(&output.stdout).trim().to_string()\n}\n\nfn main() {\n    let os = run_cmd(\"uname\", \"-s\");\n    let architecture = run_cmd(\"uname\", \"-m\");\n    let username = run_cmd_no_arg(\"whoami\");\n    let hostname = run_cmd_no_arg(\"hostname\");\n\n    let json = format!(\n        \"{{\\n  \\\"hostname\\\": \\\"{}\\\",\\n  \\\"os\\\": \\\"{}\\\",\\n  \\\"architecture\\\": \\\"{}\\\",\\n  \\\"username\\\": \\\"{}\\\"\\n}}\",\n        hostname, os, architecture, username\n    );\n\n    println!(\"{}\", json);\n}"
+    }
+   ]
+  },
+  {
+   "challenge": "matrix_ops",
+   "category": "algo",
+   "language": "python",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 13.1,
+     "finish_reason": "stop",
+     "completion_tokens": 1981,
+     "prompt_tokens": 463,
+     "tok_per_s": 150.9,
+     "reasoning_chars": 3430,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "def matrix_multiply(A, B):\n    n = len(A)\n    C = [[0] * n for _ in range(n)]\n    for i in range(n):\n        for j in range(n):\n            for k in range(n):\n                C[i][j] += A[i][k] * B[k][j]\n    return C\n\n\ndef determinant(M):\n    n = len(M)\n    if n == 1:\n        return M[0][0]\n    if n == 2:\n        return M[0][0] * M[1][1] - M[0][1] * M[1][0]\n    det = 0\n    for j in range(n):\n        minor = [row[:j] + row[j + 1:] for row in M[1:]]\n        det += ((-1) ** j) * M[0][j] * determinant(minor)\n    return det\n\n\ndef print_matrix(M):\n    for row in M:\n        print(\"  \" + \" \".join(f\"{v:4d}\" for v in row))\n\n\nA = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\nB = [[9, 8, 7], [6, 5, 4], [3, 2, 1]]\nC = matrix_multiply(A, B)\ndet = determinant(C)\n\nprint(\"=== Matrix Operations ===\")\nprint()\nprint(\"Matrix A:\")\nprint_matrix(A)\nprint()\nprint(\"Matrix B:\")\nprint_matrix(B)\nprint()\nprint(\"A x B =\")\nprint_matrix(C)\nprint()\nprint(f\"Determinant: {det}\")"
+    }
+   ]
+  },
+  {
+   "challenge": "file_tree_analysis",
+   "category": "files",
+   "language": "rust",
+   "score": 0.5,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 35.3,
+     "finish_reason": "stop",
+     "completion_tokens": 4006,
+     "prompt_tokens": 480,
+     "tok_per_s": 113.6,
+     "reasoning_chars": 11734,
+     "error": "",
+     "stage": "build",
+     "passed": false,
+     "cases": "",
+     "feedback": "",
+     "code": "use std::collections::BTreeMap;\nuse std::fs;\nuse std::io::Read;\nuse std::path::Path;\n\nfn count_lines_and_bytes(path: &Path) -> Option<(usize, usize)> {\n    let mut file = fs::File::open(path).ok()?;\n    let mut contents = Vec::new();\n    file.read_to_end(&mut contents).ok()?;\n    let bytes = contents.len();\n    let mut lines: usize = 0;\n    if !contents.is_empty() {\n        lines = contents.iter().filter(|&&b| b == b'\\n').count();\n        if contents[contents.len() - 1] != b'\\n' {\n            lines += 1;\n        }\n    }\n    Some((lines, bytes))\n}\n\nfn walk_dir(dir: &Path, base: &Path, files: &mut Vec<(String, String, usize, usize)>) {\n    let entries = match fs::read_dir(dir) {\n        Ok(e) => e,\n        Err(_) => return,\n    };\n    for entry in entries {\n        let entry = match entry {\n            Ok(e) => e,\n            Err(_) => continue,\n        };\n        let path = entry.path();\n\n        if path.is_symlink() {\n            continue;\n        }\n\n        if path.is_dir() {\n            walk_dir(&path, base, files);\n        } else if path.is_file() {\n            let rel = path.strip_prefix(base).unwrap_or(&path);\n            let rel_str = rel.to_string_lossy().to_string();\n            let ext = path\n                .extension()\n                .map(|e| format!(\".{}\", e))\n                .unwrap_or_else(|| String::new());\n\n            if let Some((lines, bytes)) = count_lines_and_bytes(&path) {\n                files.push((rel_str, ext, lines, bytes));\n            }\n        }\n    }\n}\n\nfn main() {\n    let base = Path::new(\n        \"__FIXTURE_DIR__/project_tree\",\n    );\n\n    let mut files: Vec<(String, String, usize, usize)> = Vec::new();\n    walk_dir(base, base, &mut files);\n\n    let mut groups: BTreeMap<String, Vec<(String, usize, usize)>> = BTreeMap::new();\n    for (rel, ext, lines, bytes) in &files {\n        groups\n            .entry(ext.clone())\n            .or_default()\n            .push((rel.clone(), *lines"
+    },
+    {
+     "n": 2,
+     "seconds": 9.0,
+     "finish_reason": "stop",
+     "completion_tokens": 1238,
+     "prompt_tokens": 1651,
+     "tok_per_s": 138.0,
+     "reasoning_chars": 1147,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "use std::collections::BTreeMap;\nuse std::fs;\nuse std::io::Read;\nuse std::path::Path;\n\nfn count_lines_and_bytes(path: &Path) -> Option<(usize, usize)> {\n    let mut file = fs::File::open(path).ok()?;\n    let mut contents = Vec::new();\n    file.read_to_end(&mut contents).ok()?;\n    let bytes = contents.len();\n    let mut lines: usize = 0;\n    if !contents.is_empty() {\n        lines = contents.iter().filter(|&&b| b == b'\\n').count();\n        if contents[contents.len() - 1] != b'\\n' {\n            lines += 1;\n        }\n    }\n    Some((lines, bytes))\n}\n\nfn walk_dir(dir: &Path, base: &Path, files: &mut Vec<(String, String, usize, usize)>) {\n    let entries = match fs::read_dir(dir) {\n        Ok(e) => e,\n        Err(_) => return,\n    };\n    for entry in entries {\n        let entry = match entry {\n            Ok(e) => e,\n            Err(_) => continue,\n        };\n        let path = entry.path();\n\n        if path.is_symlink() {\n            continue;\n        }\n\n        if path.is_dir() {\n            walk_dir(&path, base, files);\n        } else if path.is_file() {\n            let rel = path.strip_prefix(base).unwrap_or(&path);\n            let rel_str = rel.to_string_lossy().to_string();\n            let ext = path\n                .extension()\n                .map(|e| format!(\".{}\", e.to_string_lossy()))\n                .unwrap_or_else(|| String::new());\n\n            if let Some((lines, bytes)) = count_lines_and_bytes(&path) {\n                files.push((rel_str, ext, lines, bytes));\n            }\n        }\n    }\n}\n\nfn main() {\n    let base = Path::new(\n        \"__FIXTURE_DIR__/project_tree\",\n    );\n\n    let mut files: Vec<(String, String, usize, usize)> = Vec::new();\n    walk_dir(base, base, &mut files);\n\n    let mut groups: BTreeMap<String, Vec<(String, usize, usize)>> = BTreeMap::new();\n    for (rel, ext, lines, bytes) in &files {\n        groups\n            .entry(ext.clone())\n            .or_default()\n            .push((r"
+    }
+   ]
+  },
+  {
+   "challenge": "file_tree_analysis",
+   "category": "files",
+   "language": "c",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 67.6,
+     "finish_reason": "stop",
+     "completion_tokens": 8819,
+     "prompt_tokens": 509,
+     "tok_per_s": 130.4,
+     "reasoning_chars": 24196,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <dirent.h>\n#include <sys/stat.h>\n#include <errno.h>\n\n#define BASE_DIR \"__FIXTURE_DIR__/project_tree\"\n\ntypedef struct {\n    char *relpath;\n    char *ext;\n    long lines;\n    long chars;\n} FileInfo;\n\nstatic FileInfo **all_files = NULL;\nstatic int num_files = 0;\nstatic int cap_files = 0;\n\nstatic void add_file(const char *relpath, long lines, long chars) {\n    if (num_files >= cap_files) {\n        int newcap = cap_files ? cap_files * 2 : 128;\n        FileInfo **tmp = realloc(all_files, (size_t)newcap * sizeof(FileInfo *));\n        if (!tmp) { fprintf(stderr, \"OOM\\n\"); exit(1); }\n        all_files = tmp;\n        cap_files = newcap;\n    }\n    FileInfo *fi = malloc(sizeof(FileInfo));\n    if (!fi) { fprintf(stderr, \"OOM\\n\"); exit(1); }\n    fi->relpath = strdup(relpath);\n    if (!fi->relpath) { fprintf(stderr, \"OOM\\n\"); exit(1); }\n    const char *fname = strrchr(relpath, '/');\n    fname = fname ? fname + 1 : relpath;\n    const char *dot = strrchr(fname, '.');\n    if (dot && dot != fname) {\n        fi->ext = strdup(dot);\n    } else {\n        fi->ext = strdup(\"\");\n    }\n    if (!fi->ext) { fprintf(stderr, \"OOM\\n\"); exit(1); }\n    fi->lines = lines;\n    fi->chars = chars;\n    all_files[num_files++] = fi;\n}\n\nstatic void walk(const char *dirpath, const char *relprefix) {\n    DIR *d = opendir(dirpath);\n    if (!d) return;\n\n    struct dirent *ent;\n    while ((ent = readdir(d)) != NULL) {\n        if (ent->d_name[0] == '.' && ent->d_name[1] == '\\0') continue;\n        if (ent->d_name[0] == '.' && ent->d_name[1] == '.' && ent->d_name[2] == '\\0') continue;\n\n        size_t dlen = strlen(dirpath);\n        size_t elen = strlen(ent->d_name);\n\n        char *fullpath = malloc(dlen + 1 + elen + 1);\n        if (!fullpath) { closedir(d); return; }\n        snprintf(fullpath, dlen + 1 + elen + 1, \"%s/%s\", dirpath, ent->d_name);\n\n        size_t rlen = strlen(relprefix);\n       "
+    }
+   ]
+  },
+  {
+   "challenge": "matrix_ops",
+   "category": "algo",
+   "language": "swift",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 12.9,
+     "finish_reason": "stop",
+     "completion_tokens": 2124,
+     "prompt_tokens": 495,
+     "tok_per_s": 164.9,
+     "reasoning_chars": 3469,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "import Foundation\n\nlet A = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\nlet B = [[9, 8, 7], [6, 5, 4], [3, 2, 1]]\n\nlet n = A.count\nvar C = Array(repeating: Array(repeating: 0, count: n), count: n)\nfor i in 0..<n {\n    for j in 0..<n {\n        var sum = 0\n        for k in 0..<n {\n            sum += A[i][k] * B[k][j]\n        }\n        C[i][j] = sum\n    }\n}\n\nlet det = C[0][0] * (C[1][1] * C[2][2] - C[1][2] * C[2][1])\n        - C[0][1] * (C[1][0] * C[2][2] - C[1][2] * C[2][0])\n        + C[0][2] * (C[1][0] * C[2][1] - C[1][1] * C[2][0])\n\nfunc printMatrix(_ m: [[Int]]) {\n    for row in m {\n        var line = \"  \"\n        for (i, v) in row.enumerated() {\n            if i > 0 { line += \" \" }\n            line += String(format: \"%4d\", v)\n        }\n        print(line)\n    }\n}\n\nprint(\"=== Matrix Operations ===\")\nprint()\nprint(\"Matrix A:\")\nprintMatrix(A)\nprint()\nprint(\"Matrix B:\")\nprintMatrix(B)\nprint()\nprint(\"A x B =\")\nprintMatrix(C)\nprint()\nprint(\"Determinant: \\(det)\")"
+    }
+   ]
+  },
+  {
+   "challenge": "matrix_ops",
+   "category": "algo",
+   "language": "java",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 17.3,
+     "finish_reason": "stop",
+     "completion_tokens": 2907,
+     "prompt_tokens": 499,
+     "tok_per_s": 167.9,
+     "reasoning_chars": 4918,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "public class Main {\n    public static void main(String[] args) {\n        int[][] A = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};\n        int[][] B = {{9, 8, 7}, {6, 5, 4}, {3, 2, 1}};\n\n        int[][] C = multiply(A, B);\n        int det = determinant(C);\n\n        System.out.println(\"=== Matrix Operations ===\");\n        System.out.println();\n        System.out.println(\"Matrix A:\");\n        printMatrix(A);\n        System.out.println();\n        System.out.println(\"Matrix B:\");\n        printMatrix(B);\n        System.out.println();\n        System.out.println(\"A x B =\");\n        printMatrix(C);\n        System.out.println();\n        System.out.println(\"Determinant: \" + det);\n    }\n\n    static int[][] multiply(int[][] A, int[][] B) {\n        int n = A.length;\n        int[][] C = new int[n][n];\n        for (int i = 0; i < n; i++)\n            for (int j = 0; j < n; j++)\n                for (int k = 0; k < n; k++)\n                    C[i][j] += A[i][k] * B[k][j];\n        return C;\n    }\n\n    static int determinant(int[][] M) {\n        int n = M.length;\n        if (n == 1) return M[0][0];\n        if (n == 2) return M[0][0] * M[1][1] - M[0][1] * M[1][0];\n        int det = 0;\n        for (int j = 0; j < n; j++) {\n            int[][] minor = new int[n - 1][n - 1];\n            for (int i = 1; i < n; i++) {\n                int col = 0;\n                for (int k = 0; k < n; k++) {\n                    if (k == j) continue;\n                    minor[i - 1][col++] = M[i][k];\n                }\n            }\n            det += (j % 2 == 0 ? 1 : -1) * M[0][j] * determinant(minor);\n        }\n        return det;\n    }\n\n    static void printMatrix(int[][] M) {\n        for (int[] row : M) {\n            StringBuilder sb = new StringBuilder(\"  \");\n            for (int i = 0; i < row.length; i++) {\n                if (i > 0) sb.append(' ');\n                sb.append(String.format(\"%4d\", row[i]));\n            }\n            System.out.println(sb);\n        }\n    }\n}"
+    }
+   ]
+  },
+  {
+   "challenge": "matrix_ops",
+   "category": "algo",
+   "language": "c",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 20.4,
+     "finish_reason": "stop",
+     "completion_tokens": 3179,
+     "prompt_tokens": 550,
+     "tok_per_s": 155.7,
+     "reasoning_chars": 6111,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int A[3][3] = {{1,2,3},{4,5,6},{7,8,9}};\n    int B[3][3] = {{9,8,7},{6,5,4},{3,2,1}};\n    int C[3][3] = {{0,0,0},{0,0,0},{0,0,0}};\n\n    for (int i = 0; i < 3; i++)\n        for (int j = 0; j < 3; j++) {\n            C[i][j] = 0;\n            for (int k = 0; k < 3; k++)\n                C[i][j] += A[i][k] * B[k][j];\n        }\n\n    int det = C[0][0]*(C[1][1]*C[2][2] - C[1][2]*C[2][1])\n            - C[0][1]*(C[1][0]*C[2][2] - C[1][2]*C[2][0])\n            + C[0][2]*(C[1][0]*C[2][1] - C[1][1]*C[2][0]);\n\n    printf(\"=== Matrix Operations ===\\n\");\n    printf(\"\\n\");\n    printf(\"Matrix A:\\n\");\n    for (int i = 0; i < 3; i++) {\n        printf(\"  \");\n        for (int j = 0; j < 3; j++) {\n            if (j > 0) printf(\" \");\n            printf(\"%4d\", A[i][j]);\n        }\n        printf(\"\\n\");\n    }\n    printf(\"\\n\");\n    printf(\"Matrix B:\\n\");\n    for (int i = 0; i < 3; i++) {\n        printf(\"  \");\n        for (int j = 0; j < 3; j++) {\n            if (j > 0) printf(\" \");\n            printf(\"%4d\", B[i][j]);\n        }\n        printf(\"\\n\");\n    }\n    printf(\"\\n\");\n    printf(\"A x B =\\n\");\n    for (int i = 0; i < 3; i++) {\n        printf(\"  \");\n        for (int j = 0; j < 3; j++) {\n            if (j > 0) printf(\" \");\n            printf(\"%4d\", C[i][j]);\n        }\n        printf(\"\\n\");\n    }\n    printf(\"\\n\");\n    printf(\"Determinant: %d\\n\", det);\n\n    return 0;\n}"
+    }
+   ]
+  },
+  {
+   "challenge": "matrix_ops",
+   "category": "algo",
+   "language": "typescript",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 25.2,
+     "finish_reason": "stop",
+     "completion_tokens": 4021,
+     "prompt_tokens": 463,
+     "tok_per_s": 159.4,
+     "reasoning_chars": 8541,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "function formatRow(row: number[]): string {\n    return \"  \" + row.map(v => String(v).padStart(4)).join(\" \");\n}\n\nfunction multiply(a: number[][], b: number[][]): number[][] {\n    const n = a.length;\n    const result: number[][] = Array.from({ length: n }, () => new Array<number>(n).fill(0));\n    for (let i = 0; i < n; i++) {\n        for (let j = 0; j < n; j++) {\n            for (let k = 0; k < n; k++) {\n                result[i][j] += a[i][k] * b[k][j];\n            }\n        }\n    }\n    return result;\n}\n\nfunction determinant(m: number[][]): number {\n    const n = m.length;\n    if (n === 1) return m[0][0];\n    if (n === 2) return m[0][0] * m[1][1] - m[0][1] * m[1][0];\n    let det = 0;\n    for (let j = 0; j < n; j++) {\n        const minor: number[][] = [];\n        for (let i = 1; i < n; i++) {\n            const row: number[] = [];\n            for (let k = 0; k < n; k++) {\n                if (k !== j) row.push(m[i][k]);\n            }\n            minor.push(row);\n        }\n        det += ((j % 2 === 0) ? 1 : -1) * m[0][j] * determinant(minor);\n    }\n    return det;\n}\n\nconst A: number[][] = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];\nconst B: number[][] = [[9, 8, 7], [6, 5, 4], [3, 2, 1]];\nconst C: number[][] = multiply(A, B);\nconst det: number = determinant(C);\n\nconsole.log(\"=== Matrix Operations ===\");\nconsole.log(\"\");\nconsole.log(\"Matrix A:\");\nA.forEach(row => console.log(formatRow(row)));\nconsole.log(\"\");\nconsole.log(\"Matrix B:\");\nB.forEach(row => console.log(formatRow(row)));\nconsole.log(\"\");\nconsole.log(\"A x B =\");\nC.forEach(row => console.log(formatRow(row)));\nconsole.log(\"\");\nconsole.log(\"Determinant: \" + det);"
+    }
+   ]
+  },
+  {
+   "challenge": "matrix_ops",
+   "category": "algo",
+   "language": "rust",
+   "score": 1.0,
+   "attempts": [
+    {
+     "n": 1,
+     "seconds": 16.9,
+     "finish_reason": "stop",
+     "completion_tokens": 3095,
+     "prompt_tokens": 521,
+     "tok_per_s": 183.2,
+     "reasoning_chars": 5580,
+     "error": "",
+     "stage": "pass",
+     "passed": true,
+     "cases": "",
+     "feedback": "",
+     "code": "fn main() {\n    let a = vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]];\n    let b = vec![vec![9, 8, 7], vec![6, 5, 4], vec![3, 2, 1]];\n\n    let n = 3;\n    let mut c = vec![vec![0i64; n]; n];\n    for i in 0..n {\n        for j in 0..n {\n            for k in 0..n {\n                c[i][j] += a[i][k] as i64 * b[k][j] as i64;\n            }\n        }\n    }\n\n    let det = c[0][0] * (c[1][1] * c[2][2] - c[1][2] * c[2][1])\n             - c[0][1] * (c[1][0] * c[2][2] - c[1][2] * c[2][0])\n             + c[0][2] * (c[1][0] * c[2][1] - c[1][1] * c[2][0]);\n\n    print!(\"=== Matrix Operations ===\\n\");\n    println!();\n    println!(\"Matrix A:\");\n    for row in &a {\n        let formatted: Vec<String> = row.iter().map(|v| format!(\"{:4}\", v)).collect();\n        print!(\"  {}\\n\", formatted.join(\" \"));\n    }\n    println!();\n    println!(\"Matrix B:\");\n    for row in &b {\n        let formatted: Vec<String> = row.iter().map(|v| format!(\"{:4}\", v)).collect();\n        print!(\"  {}\\n\", formatted.join(\" \"));\n    }\n    println!();\n    println!(\"A x B =\");\n    for row in &c {\n        let formatted: Vec<String> = row.iter().map(|v| format!(\"{:4}\", v)).collect();\n        print!(\"  {}\\n\", formatted.join(\" \"));\n    }\n    println!();\n    println!(\"Determinant: {}\", det);\n}"
+    }
+   ]
+  }
+ ],
+ "total_score": 41.5,
+ "max_score": 48,
+ "pass_first": 38,
+ "pass_any": 45,
+ "well_formed_first": 48,
+ "hit_cap": 0,
+ "request_errors": 0,
+ "completion_tokens": 203081,
+ "median_tok_per_s": 130.3,
+ "by_language": {
+  "python": 7.5,
+  "typescript": 8.0,
+  "java": 7.5,
+  "swift": 6.5,
+  "rust": 7.0,
+  "c": 5.0
+ },
+ "by_challenge": {
+  "json_deep_merge": 5.0,
+  "csv_analysis": 4.5,
+  "log_parser": 5.0,
+  "http_client": 5.0,
+  "dijkstra_graph": 6.0,
+  "file_tree_analysis": 4.0,
+  "system_info": 6.0,
+  "matrix_ops": 6.0
+ }
+}

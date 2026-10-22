@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.DS_Store
+# your own runs; the curated examples live in results/examples/
+results/*.json
+report.html
