@@ -294,7 +294,7 @@ def cli_html(files, output, title, svg_dir=""):
         trs = "".join(
             f"<tr><td class=l>{_esc(r['label'])}</td><td>{a['runs']}</td><td>{fmt_score(a)}/{a['n']}</td>"
             f"<td>{a['first']:.1f}</td><td>{a['cap']:.1f}</td><td>{a['err']:.1f}</td><td>{cap_label(a)}</td>"
-            f"<td>{_esc(a['effort'])}</td><td>{f"{a['minutes']:.0f}" if a['minutes'] else "—"}</td><td>{a['tps']:.0f}</td>"
+            f"<td>{_esc(a['effort'])}</td><td>{('%.0f' % a['minutes']) if a['minutes'] else '—'}</td><td>{a['tps']:.0f}</td>"
             f"<td class=l>{_esc(a['engine'])}{' · ' if a['engine'] and a['hardware'] else ''}{_esc(a['hardware'])}</td></tr>"
             for r, a in zip(rs, aa))
         parts.append(f"""<section><h2>{_esc(SUITE_TITLE.get(suite, suite))}</h2>
