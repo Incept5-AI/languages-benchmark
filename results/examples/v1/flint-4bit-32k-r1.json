@@ -3,7 +3,7 @@
  "version": "1.0.0",
  "suite": "v1",
  "tag": "flint-4bit-32k-r1",
- "label": "Flint 4-bit",
+ "label": "Flint 40B 4-bit",
  "model": "Flint 4-bit",
  "engine": "MLX int4, mlx-vlm 0.7.10",
  "hardware": "Mac Studio M5 Ultra 256 GB",

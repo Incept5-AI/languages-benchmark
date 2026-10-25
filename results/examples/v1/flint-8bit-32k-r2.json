@@ -3,7 +3,7 @@
  "version": "1.0.0",
  "suite": "v1",
  "tag": "flint-8bit-32k-r2",
- "label": "Flint 8-bit",
+ "label": "Flint 40B 8-bit",
  "model": "Flint 8-bit",
  "engine": "MLX 8-bit, mlx-vlm 0.7.10",
  "hardware": "Mac Studio M5 Ultra 256 GB",

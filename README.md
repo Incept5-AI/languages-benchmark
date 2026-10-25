@@ -127,9 +127,9 @@ model.** Read them as "what this took on that box". Effort was `medium` for v1 a
 | Qwen3.8-Flash-Next FP4 (NVIDIA) | NVFP4, vLLM · DGX Spark | 64k | **45.0** (44.5–45.5) | 43.3 | 0 | 14 |
 | Ornith-1.5-122B | EXL3 4 bpw, TabbyAPI + MTP · DGX Spark | 32k | **42.8** (40.5–44) | 40.0 | 1.3 | 162 |
 | Qwen3.8-27B 4-bit | MLX, Splash · Mac Studio M5 Ultra | 32k | **42.0** (41.5–43) | 39.0 | 0 | 7 |
-| Flint 8-bit | MLX, mlx-vlm · Mac Studio M5 Ultra | 32k | **35.8** (32.5–38.5) | 32.3 | 0 | 40 |
+| Flint 40B 8-bit | MLX, mlx-vlm · Mac Studio M5 Ultra | 32k | **35.8** (32.5–38.5) | 32.3 | 0 | 40 |
 | Qwen3.6-35B-A3B | 4-bit, vLLM · DGX Spark | 32k | **35.8** (34–37) | 32.0 | 8.7 | 60 |
-| Flint 4-bit | MLX int4, mlx-vlm · Mac Studio M5 Ultra | 32k | **34.5** (33.5–36) | 28.3 | 0.7 | 36 |
+| Flint 40B 4-bit | MLX int4, mlx-vlm · Mac Studio M5 Ultra | 32k | **34.5** (33.5–36) | 28.3 | 0.7 | 36 |
 
 ![v1 score by language](docs/img/v1-languages.svg)
 
