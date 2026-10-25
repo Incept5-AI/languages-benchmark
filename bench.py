@@ -19,7 +19,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from langbench import report, runner, suites
+from langbench import loopguard, report, runner, suites
 
 ROOT = Path(__file__).resolve().parent
 
@@ -142,7 +142,8 @@ def cmd_run(a):
                        extra_body=json.loads(a.extra_body) if a.extra_body else None, timeout=a.timeout,
                        workers=a.workers, tag=tag, label=a.label, engine=a.engine, hardware=a.hardware,
                        challenges=[c for c in a.challenges.split(",") if c],
-                       langs=[l for l in a.langs.split(",") if l], save_replies=not a.no_replies, fresh=a.fresh)
+                       langs=[l for l in a.langs.split(",") if l], save_replies=not a.no_replies, fresh=a.fresh,
+                       loop_guard=None if a.no_loop_guard else dict(loopguard.DEFAULTS))
             runner.run(cfg, out)
 
 
@@ -175,6 +176,8 @@ def main():
     g.add_argument("--out", default="", help="result file (single suite, single run)")
     g.add_argument("--fresh", action="store_true", help="overwrite an existing result file instead of resuming")
     g.add_argument("--no-replies", action="store_true", help="store code only, not the full replies")
+    g.add_argument("--no-loop-guard", action="store_true",
+                   help="don't stream or cut looping replies (the 1.0.0 behaviour; needed to resume a 1.0.0 file)")
     r = ap.add_argument_group("report / html")
     r.add_argument("--markdown", action="store_true", help="report: print markdown tables")
     r.add_argument("--pair", action="store_true", help="report: paired exact McNemar for two runs")

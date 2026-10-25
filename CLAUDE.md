@@ -29,6 +29,8 @@ Run `verify` after touching anything under `langbench/`. Both suites must stay a
   blind-solved per `BLIND_SOLVER.md`.
 - `langbench/runner.py`: OpenAI-compatible client, two attempts, scoring, resume (same `RESUME_KEYS` → continue;
   records that failed only on request errors are re-run).
+- `langbench/loopguard.py`: streamed client (`stream_chat`) + `LoopGuard`. **Byte-identical to
+  `hle-lite/hlelite/loopguard.py`; change both together.** runner.py uses it unless `--no-loop-guard`.
 - `langbench/report.py`: grouping by (suite, label), text/markdown tables, McNemar, HTML with inline SVG heat maps
   (CSS variables for light/dark); `--svg-dir` writes standalone SVGs with literal colours (librsvg ignores CSS vars).
 
@@ -38,6 +40,10 @@ Run `verify` after touching anything under `langbench/`. Both suites must stay a
 - Scoring: 1.0 first try, 0.5 after one feedback round, 0 otherwise. Errors and timeouts stay in the denominator.
 - Size `--max-tokens` for the reasoning trace and give every compared model the same cap; "capped" counts
   `finish_reason == "length"`.
+- **Loop guard (1.1.0, default on):** a reply caught in a repetition loop is cut, recorded as `finish_reason
+  "loop"` / stage `loop`, and the test fails with no retry. Compare only runs with the same `loop_guard` setting
+  (it is a resume key). Don't loosen the thresholds without re-running the calibration in loopguard.py's docstring:
+  a false positive fails a test that could have passed.
 - v1 references use `__FIXTURE_DIR__` / `__PORT__` placeholders (v1 prompts name an absolute temp dir and port).
 
 ## Example results

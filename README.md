@@ -64,6 +64,25 @@ those attempts, so you can tell "wrong" from "ran out".
 - The 32k default keeps a run bounded in time. The v2 examples below show what it costs: re-running only the capped
   tests at the full window raised scores by 5.5–22 points out of 120.
 
+## The loop guard (on by default since 1.1.0)
+
+Some reasoning models fall into a repetition loop and keep going until the cap: the same line of code, or the same
+paragraph of "Wait, let me reconsider", thousands of times. Nothing that comes out of a loop can pass, and at a large
+cap one looping attempt can take hours. So every request is **streamed** and watched as it arrives
+(`langbench/loopguard.py`). When the last 24,000 characters of the reasoning or the reply compress to under 5% of
+their size *and* end in one block repeated back to back at least 8 times (or compress under 2%), five checks in a
+row, 2,000 characters apart, the attempt is cut. A loop therefore has to persist for about 32,000 characters
+(roughly 8–10k tokens) before anything happens.
+
+- A cut attempt is recorded with `finish_reason: "loop"`, stage `loop` and a `loop` object (where it was caught, the
+  repeating unit, a sample), and **the test fails at once, with no retry**. "Looped" in every report counts them.
+- Closing the stream makes vLLM, llama.cpp and mlx-vlm cancel the generation, so the server slot is freed too.
+- Calibration (2026-10-25, 1,861 stored replies, 478 long enough to check): it fired on three, all failed and all
+  degenerate, and never on a reply that passed. Normal prose and code compress to about 0.25–0.45, and the closest
+  normal text we have seen to 0.085; loops compress to 0.002–0.02.
+- `--no-loop-guard` restores the 1.0.0 behaviour exactly (one non-streamed request per attempt). Results written
+  before 1.1.0 have no `loop_guard` field, so resuming one needs `--no-loop-guard`.
+
 ## What a test is, and how it is scored
 
 1. The model gets **one user message** with the task and a short contract for how its program is built and run (`python3 bench.py prompt <challenge> <lang>` prints it). It gets no system prompt and no tools. The prompt is the same for every model.
@@ -158,7 +177,7 @@ python3 bench.py try png_decode rust my_attempt.rs   # grade any program; prints
 
 | Tool | What it gives you |
 |---|---|
-| `bench.py report <files>` | Leaderboard: score with the min–max range across runs, first-try passes, any-try passes, capped attempts, request errors, cap, effort, minutes per run, median tokens per second, then per-language and per-challenge tables. Runs with the same `--label` (or tag) are grouped. |
+| `bench.py report <files>` | Leaderboard: score with the min–max range across runs, first-try passes, any-try passes, capped attempts, looped attempts, request errors, cap, effort, minutes per run, median tokens per second, then per-language and per-challenge tables. Runs with the same `--label` (or tag) are grouped. |
 | `bench.py report <files> --markdown` | The same as markdown tables, to paste into a README or PR. |
 | `bench.py report A.json B.json --pair` | Exact McNemar test on first-try passes over the tests both runs share. |
 | `bench.py html <files> -o report.html` | One self-contained HTML page with a score chart and heat maps by language and by challenge. It works without JavaScript, follows light/dark mode, and gives each cell a hover tooltip. |
@@ -190,6 +209,7 @@ queueing behind other workers). It is useful for comparing runs on one setup, no
 ```
 bench.py                     the command line
 langbench/runner.py          OpenAI-compatible client, retry loop, scoring, resume
+langbench/loopguard.py       streamed requests and the loop guard (same file as in hle-lite)
 langbench/suites.py          one interface over both suites
 langbench/report.py          text/markdown leaderboards, McNemar, HTML + SVG heat maps
 langbench/v1/suite.py        v1: challenges, fixtures, oracles, prompt contract, grader

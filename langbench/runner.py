@@ -8,6 +8,12 @@ grader's feedback, so no reasoning ever has to be replayed.
 Scoring: 1.0 pass on the first try, 0.5 pass after the retry, 0.0 otherwise. Request errors and timeouts score
 0 and stay in the denominator. The file is rewritten after every test, so a partial file is readable, and a run
 that stops can be resumed with the same command.
+
+Loop guard (on by default since 1.1.0): requests are streamed and watched by `loopguard.LoopGuard`. A reply that
+falls into a repetition loop is cut as soon as the loop is confirmed, recorded with finish_reason "loop" and stage
+"loop", and the test fails with no retry: a looping model would otherwise burn the whole token budget (hours at a
+large cap) to produce nothing gradable. `--no-loop-guard` restores the 1.0.0 behaviour exactly (one non-streamed
+request per attempt).
 """
 from __future__ import annotations
 
@@ -22,9 +28,9 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import suites
+from . import loopguard, suites
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 DEFAULT_MAX_TOKENS = 32768
 
 # Qwen-family coding presets. They are what every published result in this repo used.
@@ -51,8 +57,19 @@ def chat(cfg, prompt):
     headers = {"Content-Type": "application/json"}
     if cfg.get("api_key"):
         headers["Authorization"] = f"Bearer {cfg['api_key']}"
-    req = urllib.request.Request(f"{cfg['base_url'].rstrip('/')}/chat/completions",
-                                 data=json.dumps(body).encode(), headers=headers)
+    url = f"{cfg['base_url'].rstrip('/')}/chat/completions"
+    if cfg.get("loop_guard"):
+        r = loopguard.stream_chat(url, body, headers, cfg["timeout"], loopguard.LoopGuard(cfg["loop_guard"]))
+        if r["error"] and not (r["content"] or r["reasoning"]):
+            return {"error": r["error"], "seconds": r["seconds"]}
+        usage = r["usage"]
+        completion = usage.get("completion_tokens") or 0
+        return {"content": r["content"], "reasoning": r["reasoning"], "seconds": r["seconds"],
+                "finish_reason": r["finish_reason"], "completion_tokens": completion,
+                "prompt_tokens": usage.get("prompt_tokens"), "loop": r["loop"],
+                "tok_per_s": round(completion / r["seconds"], 1) if r["seconds"] and completion else 0,
+                "error": r["error"]}
+    req = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)
     t0 = time.time()
     try:
         with urllib.request.urlopen(req, timeout=cfg["timeout"]) as r:
@@ -82,22 +99,30 @@ def run_test(suite, cfg, name, lang):
     attempts, cur = [], prompt
     for n in (1, 2):
         r = chat(cfg, cur)
+        looped = r.get("loop")
         text = suite.reply_text(r.get("content"), r.get("reasoning")) if not r["error"] else ""
         code = suite.extract(text, lang) if text else ""
-        g = (suites.Grade(False, "error", f"request failed: {r['error']}") if r["error"]
-             else suite.grade(name, lang, code))
+        if looped:
+            g = suites.Grade(False, "loop", f"reply cut: repetition loop in its {looped['channel']} after "
+                                            f"{looped['at_chars']} characters")
+        elif r["error"]:
+            g = suites.Grade(False, "error", f"request failed: {r['error']}")
+        else:
+            g = suite.grade(name, lang, code)
         att = {"n": n, "seconds": r.get("seconds"), "finish_reason": r.get("finish_reason"),
                "completion_tokens": r.get("completion_tokens"), "prompt_tokens": r.get("prompt_tokens"),
                "tok_per_s": r.get("tok_per_s"), "reasoning_chars": len(r.get("reasoning") or ""),
                "error": r["error"], "stage": g.stage, "passed": g.passed, "cases": g.cases,
                "feedback": g.feedback[:4000], "code": code}
+        if looped:
+            att["loop"] = looped
         if cfg["save_replies"]:
             att["content"] = r.get("content")
         attempts.append(att)
         if g.passed:
             return {"challenge": name, "category": suite.category(name), "language": lang,
                     "score": 1.0 if n == 1 else 0.5, "attempts": attempts}
-        if r["error"] or n == 2:
+        if r["error"] or looped or n == 2:
             break
         cur = suite.retry_prompt(prompt, lang, code, g)
     return {"challenge": name, "category": suite.category(name), "language": lang, "score": 0.0,
@@ -113,6 +138,7 @@ def summarise(state):
     state["pass_any"] = sum(1 for r in recs if r["score"] > 0)
     state["well_formed_first"] = sum(1 for r in recs if r["attempts"][0].get("code"))
     state["hit_cap"] = sum(1 for a in att if a.get("finish_reason") == "length")
+    state["looped"] = sum(1 for a in att if a.get("finish_reason") == "loop")
     state["request_errors"] = sum(1 for a in att if a.get("error"))
     state["completion_tokens"] = sum(a.get("completion_tokens") or 0 for a in att)
     rates = [a["tok_per_s"] for a in att if a.get("tok_per_s")]
@@ -126,7 +152,7 @@ def summarise(state):
 
 
 # Settings that must match for --resume to continue an existing file rather than refuse.
-RESUME_KEYS = ("suite", "model", "mode", "effort", "max_tokens", "sampling")
+RESUME_KEYS = ("suite", "model", "mode", "effort", "max_tokens", "sampling", "loop_guard")
 
 
 def run(cfg, out: Path, log=print):
@@ -143,6 +169,7 @@ def run(cfg, out: Path, log=print):
              "hardware": cfg["hardware"], "mode": cfg["mode"], "effort": cfg["effort"],
              "max_tokens": cfg["max_tokens"], "sampling": cfg["sampling"],
              "extra_body": cfg.get("extra_body") or None, "workers": cfg["workers"],
+             "loop_guard": cfg.get("loop_guard") or None,
              "scoring": "1.0 first try, 0.5 after one feedback round, 0.0 fail; errors count",
              "started": time.strftime("%Y-%m-%d %H:%M:%S"), "elapsed_s": 0.0, "records": []}
     if out.exists() and not cfg["fresh"]:
@@ -183,7 +210,8 @@ def run(cfg, out: Path, log=print):
             state["elapsed_s"] = round(time.time() - t0, 1)
             out.write_text(json.dumps(state, indent=1, ensure_ascii=False))
             last = rec["attempts"][-1]
-            note = last.get("error") or ("hit cap" if last.get("finish_reason") == "length" else last.get("stage"))
+            notes = {"length": "hit cap", "loop": f"loop at {(last.get('loop') or {}).get('at_tokens')} tok"}
+            note = last.get("error") or notes.get(last.get("finish_reason"), last.get("stage"))
             log(f"  [{len(state['records']):3d}/{len(jobs)}] {name:22s} {lang:10s} {rec['score']:.1f}  "
                 f"{(note or '')[:60]}")
 
@@ -196,7 +224,7 @@ def run(cfg, out: Path, log=print):
     out.write_text(json.dumps(state, indent=1, ensure_ascii=False))
     s = state
     log(f"\n{s['tag']}: {s['total_score']:.1f}/{s['max_score']}  first-try {s['pass_first']}  any {s['pass_any']}  "
-        f"hit-cap {s['hit_cap']}  errors {s['request_errors']}  {s['elapsed_s'] / 60:.0f} min")
+        f"hit-cap {s['hit_cap']}  looped {s['looped']}  errors {s['request_errors']}  {s['elapsed_s'] / 60:.0f} min")
     for l in langs:
         log(f"  {suites.LANG_NAMES[l]:11s} {s['by_language'].get(l, 0):5.1f}/{len(names)}")
     log(f"→ {out}")

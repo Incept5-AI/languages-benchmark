@@ -43,6 +43,7 @@ def run_stats(d):
     return dict(score=sum(r["score"] for r in recs), n=len(recs),
                 first=sum(r["score"] == 1.0 for r in recs), any=sum(r["score"] > 0 for r in recs),
                 cap=sum(a.get("finish_reason") == "length" for a in att), err=sum(bool(a.get("error")) for a in att),
+                loop=sum(a.get("finish_reason") == "loop" for a in att),
                 minutes=(d.get("elapsed_s") or 0) / 60, tokens=sum(toks),
                 tps=statistics.median(rates) if rates else 0,
                 lang={l: lang[l] / nlang[l] for l in nlang}, chal={c: chal[c] / nchal[c] for c in nchal},
@@ -68,7 +69,7 @@ def agg(row):
     m = lambda k: statistics.mean(s[k] for s in st)
     d0 = row["runs"][0]
     return dict(mean=statistics.mean(sc), lo=min(sc), hi=max(sc), n=st[0]["n"], runs=len(st), scores=sc,
-                first=m("first"), any=m("any"), cap=m("cap"), err=m("err"), minutes=m("minutes"),
+                first=m("first"), any=m("any"), cap=m("cap"), loop=m("loop"), err=m("err"), minutes=m("minutes"),
                 tokens=m("tokens"), tps=m("tps"),
                 lang={l: statistics.mean(s["lang"].get(l, 0) for s in st) for l in st[0]["lang"]},
                 chal={c: statistics.mean(s["chal"].get(c, 0) for s in st) for c in st[0]["chal"]},
@@ -106,12 +107,12 @@ def cli_report(files, markdown=False, pair=False):
         rs = [r for r in rows if r["suite"] == suite]
         aa = [agg(r) for r in rs]
         langs = [l for l in LANGS if any(l in a["lang"] for a in aa)]
-        head = ["model", "runs", "score", "%", "1st try", "any", "capped", "errors", "cap", "effort", "min/run",
+        head = ["model", "runs", "score", "%", "1st try", "any", "capped", "looped", "errors", "cap", "effort", "min/run",
                 "tok/s"] + [LANG_NAMES[l] for l in langs]
         body = []
         for r, a in zip(rs, aa):
             body.append([r["label"], str(a["runs"]), f"{fmt_score(a)}/{a['n']}", f"{100 * a['mean'] / a['n']:.0f}",
-                         f"{a['first']:.1f}", f"{a['any']:.1f}", f"{a['cap']:.1f}", f"{a['err']:.1f}",
+                         f"{a['first']:.1f}", f"{a['any']:.1f}", f"{a['cap']:.1f}", f"{a['loop']:.1f}", f"{a['err']:.1f}",
                          cap_label(a), a["effort"], f"{a['minutes']:.0f}" if a["minutes"] else "—", f"{a['tps']:.0f}"] +
                         [f"{a['lang'].get(l, 0) * a['lang_n'].get(l, 0):.1f}" for l in langs])
         print(f"\n{'### ' if markdown else ''}{SUITE_TITLE.get(suite, suite)}\n")
@@ -293,14 +294,14 @@ def cli_html(files, output, title, svg_dir=""):
                 (d / f"{suite}-{name}.svg").write_text(_standalone(svg))
         trs = "".join(
             f"<tr><td class=l>{_esc(r['label'])}</td><td>{a['runs']}</td><td>{fmt_score(a)}/{a['n']}</td>"
-            f"<td>{a['first']:.1f}</td><td>{a['cap']:.1f}</td><td>{a['err']:.1f}</td><td>{cap_label(a)}</td>"
+            f"<td>{a['first']:.1f}</td><td>{a['cap']:.1f}</td><td>{a['loop']:.1f}</td><td>{a['err']:.1f}</td><td>{cap_label(a)}</td>"
             f"<td>{_esc(a['effort'])}</td><td>{('%.0f' % a['minutes']) if a['minutes'] else '—'}</td><td>{a['tps']:.0f}</td>"
             f"<td class=l>{_esc(a['engine'])}{' · ' if a['engine'] and a['hardware'] else ''}{_esc(a['hardware'])}</td></tr>"
             for r, a in zip(rs, aa))
         parts.append(f"""<section><h2>{_esc(SUITE_TITLE.get(suite, suite))}</h2>
 <h3>Score</h3><p class=note>Bar: mean score. Dots: individual runs.</p>{board}
 <div class=scroll><table><tr><th class=l>Model</th><th>Runs</th><th>Score</th><th>1st try</th><th>Capped</th>
-<th>Errors</th><th>Cap</th><th>Effort</th><th>Min/run</th><th>tok/s</th><th class=l>Engine · hardware</th></tr>{trs}</table></div>
+<th>Looped</th><th>Errors</th><th>Cap</th><th>Effort</th><th>Min/run</th><th>tok/s</th><th class=l>Engine · hardware</th></tr>{trs}</table></div>
 <h3>By language</h3><p class=note>Percent of the available score, averaged over runs.</p><div class=scroll>{lang_svg}</div>
 <h3>By challenge</h3><p class=note>Percent of the available score (all six languages), averaged over runs. Easiest challenges first.</p>
 <div class=scroll>{chal_svg}</div></section>""")
@@ -320,7 +321,8 @@ th,td{{padding:5px 10px;border-bottom:1px solid var(--grid);text-align:right;whi
 th{{color:var(--ink-2);font-weight:600}} .l{{text-align:left}}
 {CSS_SVG}</style></head><body><main><h1>{_esc(title)}</h1>
 <p class=sub>Scoring: 1.0 first try, 0.5 after one round of feedback, 0 otherwise. Request errors and timeouts count as
-failures. "Capped" counts attempts that hit the token cap.</p>
+failures. "Capped" counts attempts that hit the token cap; "Looped" counts attempts cut by the loop guard (a reply
+caught repeating itself fails at once, with no retry).</p>
 {''.join(parts)}</main></body></html>"""
     Path(output).write_text(page)
     print(f"→ {output}" + (f" (+ SVGs in {svg_dir})" if svg_dir else ""))
