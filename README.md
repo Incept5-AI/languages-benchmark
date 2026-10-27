@@ -119,21 +119,42 @@ python3 bench.py html results/examples/*/*.json -o docs/example-report.html --sv
 The models ran on different hardware and engines, so **minutes per run are a property of the setup, not the
 model.** Read them as "what this took on that box". Effort was `medium` for v1 and as shown for v2.
 
-### v1 · 48 tests (three runs each)
+### v1 · 48 tests (three runs each unless marked)
 
-| Model | Engine · hardware | Cap | Score (range) | 1st try | Capped | Min/run |
-|---|---|---:|---:|---:|---:|---:|
-| DeepSeek-V4.1-Flash | EXL3 2.9 bpw, TensorFold TP=2 · 2× DGX Spark | 64k | **46.8** (46.5–47.5) | 46.0 | 0.7 | 71 |
-| Qwen3.8-Flash-Next FP4 (NVIDIA) | NVFP4, vLLM · DGX Spark | 64k | **45.0** (44.5–45.5) | 43.3 | 0 | 14 |
-| Ornith-1.5-122B | EXL3 4 bpw, TabbyAPI + MTP · DGX Spark | 32k | **42.8** (40.5–44) | 40.0 | 1.3 | 162 |
-| Qwen3.8-27B 4-bit | MLX, Splash · Mac Studio M5 Ultra | 32k | **42.0** (41.5–43) | 39.0 | 0 | 7 |
-| Flint 40B 8-bit | MLX, mlx-vlm · Mac Studio M5 Ultra | 32k | **35.8** (32.5–38.5) | 32.3 | 0 | 40 |
-| Qwen3.6-35B-A3B | 4-bit, vLLM · DGX Spark | 32k | **35.8** (34–37) | 32.0 | 8.7 | 60 |
-| Flint 40B 4-bit | MLX int4, mlx-vlm · Mac Studio M5 Ultra | 32k | **34.5** (33.5–36) | 28.3 | 0.7 | 36 |
+| Model | Engine · hardware | Cap | Score (range) | 1st try | Capped | Looped | Min/run |
+|---|---|---:|---:|---:|---:|---:|---:|
+| DeepSeek-V4.1-Flash | EXL3 2.9 bpw, TensorFold TP=2 · 2× DGX Spark | 64k | **46.8** (46.5–47.5) | 46.0 | 0.7 | – | 71 |
+| Qwen3.8-Flash-Next FP4 (NVIDIA) | NVFP4, vLLM · DGX Spark | 64k | **45.0** (44.5–45.5) | 43.3 | 0 | – | 14 |
+| Ornith-1.5-122B | EXL3 4 bpw, TabbyAPI + MTP · DGX Spark | 32k | **42.8** (40.5–44) | 40.0 | 1.3 | – | 162 |
+| Gemma-4-31B 4-bit | MLX, oMLX · Mac Studio M5 Ultra | 32k | **42.5** (42–43) | 39.7 | 0 | 0 | 46 |
+| Qwen3.8-27B 4-bit | MLX, Splash · Mac Studio M5 Ultra | 32k | **42.0** (41.5–43) | 39.0 | 0 | – | 7 |
+| Muse Glimmer 30B 4-bit | MLX, oMLX · Mac Studio M5 Ultra | 32k | **38.5** (36.5–40) | 34.0 | 0.3 | 0 | 17 |
+| Gemma-4-12B BF16 | MLX, oMLX · Mac Studio M5 Ultra | 32k | **37.5** (35.5–38.5) | 34.0 | 0.3 | 1.3 | 54 |
+| Flint 40B 8-bit | MLX, mlx-vlm · Mac Studio M5 Ultra | 32k | **35.8** (32.5–38.5) | 32.3 | 0 | – | 40 |
+| Qwen3.6-35B-A3B | 4-bit, vLLM · DGX Spark | 32k | **35.8** (34–37) | 32.0 | 8.7 | – | 60 |
+| Flint 40B 4-bit | MLX int4, mlx-vlm · Mac Studio M5 Ultra | 32k | **34.5** (33.5–36) | 28.3 | 0.7 | – | 36 |
+| Gemma-4-26B-A4B 4-bit | MLX, oMLX · Mac Studio M5 Ultra | 32k | **27.8** (26.5–29) | 25.3 | 3.3 | 5.3 | 45 |
+| Nanbeige4.3-33B 4-bit (one run) | MLX, oMLX · Mac Studio M5 Ultra | 32k | **22.5** | 20.0 | 16 | 0 | 419 |
+| Gemma-4-12B 4-bit (one run) | MLX, oMLX · Mac Studio M5 Ultra | 32k | **17.5** | 15.0 | 7 | 24 | 81 |
+| Qwen3.5-9B BF16 | MLX, oMLX · Mac Studio M5 Ultra | 32k | **16.8** (16–18) | 15.0 | 1.7 | 19.3 | 73 |
+| Qwen3.5-4B BF16 | MLX, oMLX · Mac Studio M5 Ultra | 32k | **8.7** (7–10) | 7.3 | 1.3 | 31.0 | 71 |
+
+"Looped" counts attempts the loop guard cut (1.1.0); the earlier rows were run before it existed. The rows run on oMLX
+(October 2026) used thinking on, the default sampling and the 32k cap. Gemma-4 needs
+`--extra-body '{"chat_template_kwargs":{"enable_thinking":true}}'` because its template defaults to thinking off.
+Muse Glimmer ran at `reasoning_strength` medium (its default is high); the Qwen3.5 and Gemma models have no effort
+setting. Gemma-4-31B's minutes are from its first two runs; the third was interrupted by a network outage and resumed.
+
+- **Quantization can halve a small model's score.** Gemma-4-12B scored 37.5 in BF16 and 17.5 at 4-bit, where it fell
+  into repetition loops on 24 attempts. Small models are worth testing at 8-bit or BF16 before ruling them out.
+- **Qwen3.5-4B and 9B loop.** Most of their failures are reasoning that repeats itself until the guard cuts it.
+- **Nanbeige4.3-33B** (one run, at 4 in flight because its full-attention KV cache hit oMLX's memory guard at 8) is
+  perfect on Python and TypeScript (8/8 each) but weak in the compiled languages, and 16 of its 76 attempts hit the 32k
+  cap: its median attempt was about 17k tokens.
 
 ![v1 score by language](docs/img/v1-languages.svg)
 
-Python and TypeScript are nearly solved by every model. Swift is the weakest language for five of the seven, with C
+Python and TypeScript are nearly solved by every model. Swift is the weakest language for most of them, with C
 and Rust close behind. Most failed Rust attempts don't compile. C fails about equally on building, crashing and wrong
 output. (v1 runs Swift as a script, so its compile errors show up as run errors.)
 
