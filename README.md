@@ -160,19 +160,32 @@ output. (v1 runs Swift as a script, so its compile errors show up as run errors.
 
 ### v2 · 120 tests (one run each)
 
-| Model | Engine · hardware | Effort | Score at 32k | Capped attempts | Capped tests re-run at full window | Min/run (32k) |
-|---|---|---|---:|---:|---:|---:|
-| Qwen3.8-Flash-Next FP4 (NVIDIA) | NVFP4, vLLM, MTP · DGX Spark | low | **63.5** | 76 | **76.5** | 446 |
-| Qwen3.8-Flash-Next 4-bit MLX | oQ4e, oMLX · Mac Studio M5 Ultra | low | **61.5** | 64 | **67.0** | 253 |
-| Qwen3.8-Flash-Next FP4 (NVIDIA) | NVFP4, vLLM · DGX Spark | medium | **61.0** | 40 | **69.5** | 467 |
-| Qwen3.8-Flash-Next 8-bit MLX | oQ8e, mlx-vlm · Mac Studio M5 Ultra | low | **56.5** | 86 | **78.5** | 993 |
-| GLM-5.3-Flash | EXL3 · 2× DGX Spark | low | **52.5** | 31 | — | 389 |
+| Model | Engine · hardware | Effort | Score at 32k | Capped attempts | Looped | Capped tests re-run at full window | Min/run (32k) |
+|---|---|---|---:|---:|---:|---:|---:|
+| Qwen3.8-Flash-Next FP4 (NVIDIA) | NVFP4, vLLM, MTP · DGX Spark | low | **63.5** | 76 | – | **76.5** | 446 |
+| Qwen3.8-Flash-Next 4-bit MLX | oQ4e, oMLX · Mac Studio M5 Ultra | low | **61.5** | 64 | – | **67.0** | 253 |
+| Qwen3.8-Flash-Next FP4 (NVIDIA) | NVFP4, vLLM · DGX Spark | medium | **61.0** | 40 | – | **69.5** | 467 |
+| Qwen3.8-Flash-Next 8-bit MLX | oQ8e, mlx-vlm · Mac Studio M5 Ultra | low | **56.5** | 86 | – | **78.5** | 993 |
+| GLM-5.3-Flash | EXL3 · 2× DGX Spark | low | **52.5** | 31 | – | — | 389 |
+| Gemma-4-31B 4-bit | MLX, oMLX · Mac Studio M5 Ultra | default | **27.5** | 0 | 14 | — | 482 |
+| Muse Glimmer 30B 4-bit | MLX, oMLX · Mac Studio M5 Ultra | medium | **26.5** | 2 | 0 | — | — |
+| Gemma-4-12B BF16 | MLX, oMLX · Mac Studio M5 Ultra | default | **4.5** | 31 | 66 | — | — |
+| Gemma-4-26B-A4B 4-bit | MLX, oMLX · Mac Studio M5 Ultra | default | **1.0** | 111 | 63 | — | 319 |
+| Qwen3.5-9B BF16 | MLX, oMLX · Mac Studio M5 Ultra | default | **0.0** | 16 | 100 | — | 377 |
+| Qwen3.5-4B BF16 | MLX, oMLX · Mac Studio M5 Ultra | default | **0.0** | 9 | 103 | — | 279 |
 
 ![v2 score by language](docs/img/v2-languages.svg)
 
-At a 32k cap, **most v2 failures by the Qwen builds are the cap, not wrong code.** Re-running just the capped tests
+At a 32k cap, **most v2 failures by the Qwen3.8 builds are the cap, not wrong code.** Re-running just the capped tests
 with the whole context window moved them 5.5–22 points. `regex_engine` (a backtracking engine times out by
 design) and `mime_parse` stay at or near zero for every model. The heat map at the top of this page shows each challenge.
+
+The October 2026 oMLX rows used the same settings as their v1 runs (thinking on, default sampling). v2 is a much bigger
+step than v1 for the ~30B models: Gemma-4-31B scores 42.5/48 on v1 but 27.5/120 here, and Muse Glimmer 38.5 and 26.5.
+Both write mostly finished programs that fail to build or print the wrong thing; neither hits the cap. The smaller
+models mostly never finish: the Qwen3.5s and Gemma-4-12B loop, and Gemma-4-26B-A4B runs into the 32k cap on 111 of its
+199 attempts. Glimmer and Gemma-4-12B were graded on the Mac Studio itself after the network link to the grading laptop
+kept dropping, and their minutes include restarts, so they are left out.
 
 ## Reference solutions
 
